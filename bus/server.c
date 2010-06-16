@@ -135,6 +135,7 @@ bus_server_new_connection (BusServer     *server,
 {
     g_assert (BUS_IS_SERVER (server));
     bus_dbus_impl_new_connection (server->dbus, connection);
+    g_debug ("new connection");
 }
 
 static void

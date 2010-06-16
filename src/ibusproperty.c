@@ -24,9 +24,9 @@
 /* functions prototype */
 static void         ibus_property_destroy       (IBusProperty       *prop);
 static gboolean     ibus_property_serialize     (IBusProperty       *prop,
-                                                 IBusMessageIter    *iter);
-static gboolean     ibus_property_deserialize   (IBusProperty       *prop,
-                                                 IBusMessageIter    *iter);
+                                                 GVariantBuilder    *builder);
+static gint         ibus_property_deserialize   (IBusProperty       *prop,
+                                                 GVariant           *variant);
 static gboolean     ibus_property_copy          (IBusProperty       *dest,
                                                  const IBusProperty *src);
 
@@ -91,97 +91,56 @@ ibus_property_destroy (IBusProperty *prop)
 
 gboolean
 ibus_property_serialize (IBusProperty    *prop,
-                         IBusMessageIter *iter)
+                         GVariantBuilder *builder)
 {
     gboolean retval;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_property_parent_class)->serialize ((IBusSerializable *) prop, iter);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_property_parent_class)->serialize ((IBusSerializable *) prop, builder);
     g_return_val_if_fail (retval, FALSE);
 
     g_return_val_if_fail (IBUS_IS_PROPERTY (prop), FALSE);
 
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &prop->key);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_UINT, &prop->type);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, IBUS_TYPE_TEXT, &prop->label);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &prop->icon);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, IBUS_TYPE_TEXT, &prop->tooltip);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_BOOLEAN, &prop->sensitive);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_BOOLEAN, &prop->visible);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_UINT, &prop->state);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, IBUS_TYPE_PROP_LIST, &prop->sub_props);
-    g_return_val_if_fail (retval, FALSE);
+    g_variant_builder_add (builder, "s", prop->key);
+    g_variant_builder_add (builder, "u", prop->type);
+    g_variant_builder_add (builder, "v", ibus_serializable_serialize ((IBusSerializable *)prop->label));
+    g_variant_builder_add (builder, "s", prop->icon);
+    g_variant_builder_add (builder, "v", ibus_serializable_serialize ((IBusSerializable *)prop->tooltip));
+    g_variant_builder_add (builder, "b", prop->sensitive);
+    g_variant_builder_add (builder, "b", prop->visible);
+    g_variant_builder_add (builder, "u", prop->state);
+    g_variant_builder_add (builder, "v", ibus_serializable_serialize ((IBusSerializable *)prop->sub_props));
 
     return TRUE;
 }
 
-static gboolean
-ibus_property_deserialize (IBusProperty    *prop,
-                           IBusMessageIter *iter)
+static gint
+ibus_property_deserialize (IBusProperty *prop,
+                           GVariant     *variant)
 {
-    gboolean retval;
-    gchar *p;
+    gint retval;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_property_parent_class)->deserialize ((IBusSerializable *) prop, iter);
-    g_return_val_if_fail (retval, FALSE);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_property_parent_class)->deserialize ((IBusSerializable *) prop, variant);
+    g_return_val_if_fail (retval, 0);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &p);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    prop->key = g_strdup (p);
+    g_variant_get_child (variant, retval++, "s", &prop->key);
+    g_variant_get_child (variant, retval++, "u", &prop->type);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_UINT, &prop->type);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-
-    retval = ibus_message_iter_get (iter, IBUS_TYPE_TEXT, &prop->label);
+    prop->label = (IBusText *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
     g_object_ref_sink (prop->label);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &p);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    prop->icon = g_strdup (p);
+    g_variant_get_child (variant, retval++, "s", &prop->icon);
 
-    retval = ibus_message_iter_get (iter, IBUS_TYPE_TEXT, &prop->tooltip);
+    prop->tooltip = (IBusText *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
     g_object_ref_sink (prop->tooltip);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_BOOLEAN, &prop->sensitive);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
+    g_variant_get_child (variant, retval++, "b", &prop->sensitive);
+    g_variant_get_child (variant, retval++, "b", &prop->visible);
+    g_variant_get_child (variant, retval++, "u", &prop->state);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_BOOLEAN, &prop->visible);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_UINT, &prop->state);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-
-    retval = ibus_message_iter_get (iter, IBUS_TYPE_PROP_LIST, &prop->sub_props);
+    prop->sub_props = (IBusPropList *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
     g_object_ref_sink (prop->sub_props);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
 
-    return TRUE;
+    return retval;
 }
 
 static gboolean

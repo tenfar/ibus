@@ -44,9 +44,9 @@ typedef struct _IBusComponentPrivate IBusComponentPrivate;
 /* functions prototype */
 static void         ibus_component_destroy      (IBusComponent          *component);
 static gboolean     ibus_component_serialize    (IBusComponent          *component,
-                                                 IBusMessageIter        *iter);
-static gboolean     ibus_component_deserialize  (IBusComponent          *component,
-                                                 IBusMessageIter        *iter);
+                                                 GVariantBuilder        *builder);
+static gint         ibus_component_deserialize  (IBusComponent          *component,
+                                                 GVariant               *variant);
 static gboolean     ibus_component_copy         (IBusComponent          *dest,
                                                  const IBusComponent    *src);
 static gboolean     ibus_component_parse_xml_node
@@ -153,144 +153,73 @@ ibus_component_destroy (IBusComponent *component)
 
 static gboolean
 ibus_component_serialize (IBusComponent   *component,
-                          IBusMessageIter *iter)
+                          GVariantBuilder *builder)
 {
     gboolean retval;
-    IBusMessageIter array_iter;
+
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_component_parent_class)->serialize ((IBusSerializable *)component, builder);
+    g_return_val_if_fail (retval, FALSE);
+
+    g_variant_builder_add (builder, "s", component->name);
+    g_variant_builder_add (builder, "s", component->description);
+    g_variant_builder_add (builder, "s", component->version);
+    g_variant_builder_add (builder, "s", component->license);
+    g_variant_builder_add (builder, "s", component->author);
+    g_variant_builder_add (builder, "s", component->homepage);
+    g_variant_builder_add (builder, "s", component->exec);
+    g_variant_builder_add (builder, "s", component->textdomain);
+
     GList *p;
-
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_component_parent_class)->serialize ((IBusSerializable *)component, iter);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->name);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->description);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->version);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->license);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->author);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->homepage);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->exec);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &component->textdomain);
-    g_return_val_if_fail (retval, FALSE);
-
+    GVariantBuilder *array;
     /* serialize observed paths */
-    retval = ibus_message_iter_open_container (iter, IBUS_TYPE_ARRAY, "v", &array_iter);
-    g_return_val_if_fail (retval, FALSE);
-
+    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
     for (p = component->observed_paths; p != NULL; p = p->next) {
-        retval = ibus_message_iter_append (&array_iter, IBUS_TYPE_OBSERVED_PATH, &(p->data));
-        g_return_val_if_fail (retval, FALSE);
+        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)p->data));
     }
-    retval = ibus_message_iter_close_container (iter, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
+    g_variant_builder_add (builder, "av", array);
 
     /* serialize engine desc */
-    retval = ibus_message_iter_open_container (iter, IBUS_TYPE_ARRAY, "v", &array_iter);
-    g_return_val_if_fail (retval, FALSE);
-
+    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
     for (p = component->engines; p != NULL; p = p->next) {
-        retval = ibus_message_iter_append (&array_iter, IBUS_TYPE_ENGINE_DESC, &(p->data));
-        g_return_val_if_fail (retval, FALSE);
+        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)p->data));
     }
-    retval = ibus_message_iter_close_container (iter, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
+    g_variant_builder_add (builder, "av", array);
 
     return TRUE;
 }
 
-static gboolean
+static gint
 ibus_component_deserialize (IBusComponent   *component,
-                            IBusMessageIter *iter)
+                            GVariant        *variant)
 {
     gboolean retval;
-    gchar *str;
-    IBusMessageIter array_iter;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_component_parent_class)->deserialize ((IBusSerializable *)component, iter);
-    g_return_val_if_fail (retval, FALSE);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_component_parent_class)->deserialize ((IBusSerializable *)component, variant);
+    g_return_val_if_fail (retval, 0);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->name = g_strdup (str);
+    g_variant_get_child (variant, retval++, "s", &component->name);
+    g_variant_get_child (variant, retval++, "s", &component->description);
+    g_variant_get_child (variant, retval++, "s", &component->version);
+    g_variant_get_child (variant, retval++, "s", &component->license);
+    g_variant_get_child (variant, retval++, "s", &component->author);
+    g_variant_get_child (variant, retval++, "s", &component->homepage);
+    g_variant_get_child (variant, retval++, "s", &component->exec);
+    g_variant_get_child (variant, retval++, "s", &component->textdomain);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->description = g_strdup (str);
+    GVariantIter *iter = NULL;
+    GVariant *var;
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->version = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->license = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->author = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->homepage = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->exec = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    component->textdomain = g_strdup (str);
-
-    retval = ibus_message_iter_recurse (iter, IBUS_TYPE_ARRAY, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
-    while (ibus_message_iter_get_arg_type (&array_iter) != G_TYPE_INVALID) {
-        IBusObservedPath *path;
-
-        retval = ibus_message_iter_get (&array_iter, IBUS_TYPE_OBSERVED_PATH, &path);
-        g_return_val_if_fail (retval, FALSE);
-        ibus_message_iter_next (&array_iter);
-
-        g_object_ref_sink (path);
-        component->observed_paths = g_list_append (component->observed_paths, path);
+    g_variant_get_child (variant, retval++, "av", &iter);
+    while (g_variant_iter_loop (iter, "v", &var)) {
+        component->observed_paths = g_list_append (component->observed_paths, ibus_serializable_deserialize (var));
     }
-    ibus_message_iter_next (iter);
 
-    retval = ibus_message_iter_recurse (iter, IBUS_TYPE_ARRAY, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
-
-    while (ibus_message_iter_get_arg_type (&array_iter) != G_TYPE_INVALID) {
-        IBusEngineDesc *engine;
-
-        retval = ibus_message_iter_get (&array_iter, IBUS_TYPE_ENGINE_DESC, &engine);
-        g_return_val_if_fail (retval, FALSE);
-        ibus_message_iter_next (&array_iter);
-
-        ibus_component_add_engine (component, engine);
+    g_variant_get_child (variant, retval++, "av", &iter);
+    while (g_variant_iter_loop (iter, "v", &var)) {
+        component->engines = g_list_append (component->engines, ibus_serializable_deserialize (var));
     }
-    ibus_message_iter_next (iter);
 
-    return TRUE;
+    return retval;
 }
 
 static gboolean

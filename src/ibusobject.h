@@ -68,6 +68,8 @@ G_BEGIN_DECLS
 
 typedef struct _IBusObject IBusObject;
 typedef struct _IBusObjectClass IBusObjectClass;
+typedef struct _IBusObjectPrivate IBusObjectPrivate;
+
 /**
  * IBusObject:
  *
@@ -75,9 +77,11 @@ typedef struct _IBusObjectClass IBusObjectClass;
  * private to the #IBusObject and should never be accessed directly.
  */
 struct _IBusObject {
-  GInitiallyUnowned parent;
-  /* instance members */
-  guint32 flags;
+    GInitiallyUnowned parent;
+    /* instance members */
+    guint32 flags;
+
+    IBusObjectPrivate *priv;
 };
 
 typedef void ( *IBusObjectDestroyFunc) (IBusObject *);

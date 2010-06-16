@@ -69,9 +69,9 @@ static void          ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *kla
 static void          ibus_hotkey_profile_init       (IBusHotkeyProfile      *profile);
 static void          ibus_hotkey_profile_destroy    (IBusHotkeyProfile      *profile);
 static gboolean      ibus_hotkey_profile_serialize  (IBusHotkeyProfile      *profile,
-                                                     IBusMessageIter        *iter);
-static gboolean      ibus_hotkey_profile_deserialize(IBusHotkeyProfile      *profile,
-                                                     IBusMessageIter        *iter);
+                                                     GVariantBuilder        *builder);
+static gint          ibus_hotkey_profile_deserialize(IBusHotkeyProfile      *profile,
+                                                     GVariant               *variant);
 static gboolean      ibus_hotkey_profile_copy       (IBusHotkeyProfile      *dest,
                                                      const IBusHotkeyProfile*src);
 static void          ibus_hotkey_profile_trigger    (IBusHotkeyProfile      *profile,
@@ -293,26 +293,26 @@ ibus_hotkey_profile_destroy (IBusHotkeyProfile *profile)
 
 static gboolean
 ibus_hotkey_profile_serialize (IBusHotkeyProfile *profile,
-                               IBusMessageIter   *iter)
+                               GVariantBuilder   *builder)
 {
     gboolean retval;
 
-    retval = parent_class->serialize ((IBusSerializable *) profile, iter);
+    retval = parent_class->serialize ((IBusSerializable *) profile, builder);
     g_return_val_if_fail (retval, FALSE);
 
     return TRUE;
 }
 
-static gboolean
+static gint
 ibus_hotkey_profile_deserialize (IBusHotkeyProfile *profile,
-                                 IBusMessageIter   *iter)
+                                 GVariant          *variant)
 {
-    gboolean retval;
+    gint retval;
 
-    retval = parent_class->deserialize ((IBusSerializable *) profile, iter);
-    g_return_val_if_fail (retval, FALSE);
+    retval = parent_class->deserialize ((IBusSerializable *) profile, variant);
+    g_return_val_if_fail (retval, 0);
 
-    return TRUE;
+    return retval;
 }
 
 static gboolean

@@ -20,6 +20,12 @@
 # Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307  USA
 
+NULL =
+
+SUBDIRS = \
+	tests \
+	$(NULL)
+
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_SCANNER_ARGS =
 INTROSPECTION_COMPILER_ARGS = \
@@ -28,11 +34,6 @@ INTROSPECTION_COMPILER_ARGS = \
 	$(NULL)
 INTROSPECTION_GIRS =
 CLEANFILES =
-
-
-INCLUDES = \
-	-I$(top_srcdir) \
-	$(NULL)
 
 # ibus library
 ibustargetlib = libibus.la
@@ -142,7 +143,7 @@ IBus_1_0_gir_SCANNERFLAGS = --strip-prefix=IBus --pkg=dbus-1,glib-2.0
 IBus_1_0_gir_INCLUDES = GLib-2.0 GObject-2.0
 IBus_1_0_gir_LIBS = $(ibustargetlib)
 IBus_1_0_gir_FILES = $(addprefix $(srcdir)/,$(introspection_files))
-IBus_1_0_gir_CFLAGS = $(INCLUDES)
+IBus_1_0_gir_CFLAGS =
 INTROSPECTION_GIRS += IBus-1.0.gir
 
 girdir = $(datadir)/gir-1.0
@@ -190,50 +191,6 @@ libibus_la_LDFLAGS = \
 BUILT_SOURCES = \
 	$(ibus_built_sources) \
 	$(NULL)
-
-
-# test programs
-DEPS = \
-	libibus.la \
-	$(NULL)
-AM_CFLAGS = \
-	@X11_CFLAGS@ \
-	@GLIB2_CFLAGS@ \
-	@GOBJECT2_CFLAGS@ \
-	@GIO2_CFLAGS@ \
-	@DBUS_CFLAGS@ \
-	-DG_LOG_DOMAIN=\"IBUS\" \
-	$(NULL)
-AM_LDADD = \
-	$(DEPS) \
-	@GLIB2_LIBS@ \
-	@GOBJECT2_LIBS@ \
-	$(NULL)
-
-TESTS = \
-	test-bus \
-	test-text \
-	test-keymap \
-	test-keynames \
-	test-attribute \
-	test-lookuptable \
-	test-global-engine \
-	$(NULL)
-noinst_PROGRAMS = $(TESTS)
-test_bus_DEPENDENCIES = $(DEPS)
-test_text_DEPENDENCIES = $(DEPS)
-test_keymap_DEPENDENCIES = $(DEPS)
-test_keynames_DEPENDENCIES = $(DEPS)
-test_attribute_DEPENDENCIES = $(DEPS)
-test_lookuptable_DEPENDENCIES = $(DEPS)
-test_global_engine_DEPENDENCIES = $(DEPS)
-test_bus_LDADD = $(AM_LDADD)
-test_text_LDADD = $(AM_LDADD)
-test_keymap_LDADD = $(AM_LDADD)
-test_keynames_LDADD = $(AM_LDADD)
-test_attribute_LDADD = $(AM_LDADD)
-test_lookuptable_LDADD = $(AM_LDADD)
-test_global_engine_LDADD = $(AM_LDADD)
 
 # gen enum types
 ibusenumtypes.h: stamp-ibusenumtypes.h

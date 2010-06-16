@@ -818,7 +818,7 @@ _connection_ibus_message_cb (BusConnection  *connection,
                  ibus_message_get_error_message (message));
         break;
 #endif
-#if 0
+#if 1
     case DBUS_MESSAGE_TYPE_SIGNAL:
         g_debug ("From :%s to %s, Signal: %s @ %s",
                  ibus_message_get_sender (message),
@@ -828,7 +828,7 @@ _connection_ibus_message_cb (BusConnection  *connection,
                  );
         break;
 #endif
-#if 0
+#if 1
     case DBUS_MESSAGE_TYPE_METHOD_CALL:
         g_debug("From %s to %s, Method %s on %s",
                 ibus_message_get_sender (message),

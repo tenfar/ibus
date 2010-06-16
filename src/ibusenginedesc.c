@@ -41,9 +41,9 @@ typedef struct _IBusEngineDescPrivate IBusEngineDescPrivate;
 /* functions prototype */
 static void         ibus_engine_desc_destroy        (IBusEngineDesc         *desc);
 static gboolean     ibus_engine_desc_serialize      (IBusEngineDesc         *desc,
-                                                     IBusMessageIter        *iter);
-static gboolean     ibus_engine_desc_deserialize    (IBusEngineDesc         *desc,
-                                                     IBusMessageIter        *iter);
+                                                     GVariantBuilder        *builder);
+static gint         ibus_engine_desc_deserialize    (IBusEngineDesc         *desc,
+                                                     GVariant               *variant);
 static gboolean     ibus_engine_desc_copy           (IBusEngineDesc         *dest,
                                                      const IBusEngineDesc   *src);
 static gboolean     ibus_engine_desc_parse_xml_node (IBusEngineDesc         *desc,
@@ -99,98 +99,46 @@ ibus_engine_desc_destroy (IBusEngineDesc *desc)
 
 static gboolean
 ibus_engine_desc_serialize (IBusEngineDesc  *desc,
-                            IBusMessageIter *iter)
+                            GVariantBuilder *builder)
 {
     gboolean retval;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_engine_desc_parent_class)->serialize ((IBusSerializable *)desc, iter);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_engine_desc_parent_class)->serialize ((IBusSerializable *)desc, builder);
     g_return_val_if_fail (retval, FALSE);
 
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->name);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->longname);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->description);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->language);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->license);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->author);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->icon);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_STRING, &desc->layout);
-    g_return_val_if_fail (retval, FALSE);
-
-    retval = ibus_message_iter_append (iter, G_TYPE_UINT, &desc->rank);
-    g_return_val_if_fail (retval, FALSE);
+    g_variant_builder_add (builder, "s", desc->name);
+    g_variant_builder_add (builder, "s", desc->longname);
+    g_variant_builder_add (builder, "s", desc->description);
+    g_variant_builder_add (builder, "s", desc->language);
+    g_variant_builder_add (builder, "s", desc->license);
+    g_variant_builder_add (builder, "s", desc->author);
+    g_variant_builder_add (builder, "s", desc->icon);
+    g_variant_builder_add (builder, "s", desc->layout);
+    g_variant_builder_add (builder, "u", desc->rank);
 
     return TRUE;
 }
 
-static gboolean
-ibus_engine_desc_deserialize (IBusEngineDesc  *desc,
-                              IBusMessageIter *iter)
+static gint
+ibus_engine_desc_deserialize (IBusEngineDesc *desc,
+                              GVariant       *variant)
 {
-    gboolean retval;
-    gchar *str;
+    gint retval;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_engine_desc_parent_class)->deserialize ((IBusSerializable *)desc, iter);
-    g_return_val_if_fail (retval, FALSE);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_engine_desc_parent_class)->deserialize ((IBusSerializable *)desc, variant);
+    g_return_val_if_fail (retval, 0);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->name = g_strdup (str);
+    g_variant_get_child (variant, retval++, "s", &desc->name);
+    g_variant_get_child (variant, retval++, "s", &desc->longname);
+    g_variant_get_child (variant, retval++, "s", &desc->description);
+    g_variant_get_child (variant, retval++, "s", &desc->language);
+    g_variant_get_child (variant, retval++, "s", &desc->license);
+    g_variant_get_child (variant, retval++, "s", &desc->author);
+    g_variant_get_child (variant, retval++, "s", &desc->icon);
+    g_variant_get_child (variant, retval++, "s", &desc->layout);
+    g_variant_get_child (variant, retval++, "u", &desc->rank);
 
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->longname = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->description = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->language = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->license = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->author = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->icon = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_STRING, &str);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-    desc->layout = g_strdup (str);
-
-    retval = ibus_message_iter_get (iter, G_TYPE_UINT, &desc->rank);
-    g_return_val_if_fail (retval, FALSE);
-    ibus_message_iter_next (iter);
-
-    return TRUE;
+    return retval;
 }
 
 static gboolean

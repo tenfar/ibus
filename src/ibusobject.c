@@ -30,7 +30,6 @@ enum {
     LAST_SIGNAL,
 };
 
-typedef struct _IBusObjectPrivate IBusObjectPrivate;
 struct _IBusObjectPrivate {
     gpointer pad;
 };
@@ -72,8 +71,6 @@ ibus_object_class_init     (IBusObjectClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-    g_type_class_add_private (klass, sizeof (IBusObjectPrivate));
-
     gobject_class->constructor = ibus_object_constructor;
     gobject_class->dispose = (GObjectFinalizeFunc) ibus_object_dispose;
     gobject_class->finalize = (GObjectFinalizeFunc) ibus_object_finalize;
@@ -99,20 +96,19 @@ ibus_object_class_init     (IBusObjectClass *klass)
             NULL, NULL,
             ibus_marshal_VOID__VOID,
             G_TYPE_NONE, 0);
+
+    g_type_class_add_private (klass, sizeof (IBusObjectPrivate));
+
 #ifdef DEBUG_MEMORY
     _count_table = g_hash_table_new (g_direct_hash, g_direct_equal);
 #endif
-
 }
 
 static void
 ibus_object_init (IBusObject *obj)
 {
-    IBusObjectPrivate *priv;
-    priv = IBUS_OBJECT_GET_PRIVATE (obj);
-
     obj->flags = 0;
-
+    obj->priv = IBUS_OBJECT_GET_PRIVATE (obj);
 }
 
 
@@ -180,9 +176,6 @@ ibus_object_real_destroy (IBusObject *obj)
 void
 ibus_object_destroy (IBusObject *obj)
 {
-    IBusObjectPrivate *priv;
-    priv = IBUS_OBJECT_GET_PRIVATE (obj);
-
     if (! (IBUS_OBJECT_FLAGS (obj) & IBUS_IN_DESTRUCTION)) {
         g_object_run_dispose (G_OBJECT (obj));
     }

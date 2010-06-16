@@ -334,6 +334,7 @@ client/gtk3/Makefile
 client/x11/Makefile
 src/Makefile
 src/ibusversion.h
+src/tests/Makefile
 bus/Makefile
 util/Makefile
 util/IMdkit/Makefile

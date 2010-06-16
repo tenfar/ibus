@@ -567,7 +567,9 @@ ibus_message_iter_append (IBusMessageIter *iter,
         }
 
         if (g_type_is_a (type, IBUS_TYPE_SERIALIZABLE)) {
-            return ibus_serializable_serialize (*(IBusSerializable **)value, iter);
+            /* FIXME */
+            return FALSE;
+            // return ibus_serializable_serialize (*(IBusSerializable **)value, iter);
         }
     }
 
@@ -860,6 +862,9 @@ ibus_message_iter_get (IBusMessageIter *iter,
         }
 
         if (g_type_is_a (type, IBUS_TYPE_SERIALIZABLE)) {
+            /* FIXME */
+            return FALSE;
+            #if 0
             IBusSerializable *v;
             v = ibus_serializable_deserialize (iter);
 
@@ -871,6 +876,7 @@ ibus_message_iter_get (IBusMessageIter *iter,
             }
             *(gpointer *) value = v;
             return TRUE;
+            #endif
         }
     }
     return FALSE;

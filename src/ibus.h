@@ -31,7 +31,7 @@
 #include <ibustext.h>
 #include <ibusconnection.h>
 #include <ibusserver.h>
-#include <ibusproxy.h>
+// #include <ibusproxy.h>
 #include <ibusservice.h>
 #include <ibusfactory.h>
 #include <ibusengine.h>

@@ -24,9 +24,9 @@
 /* functions prototype */
 static void         ibus_attr_list_destroy      (IBusAttrList           *attr_list);
 static gboolean     ibus_attr_list_serialize    (IBusAttrList           *attr_list,
-                                                 IBusMessageIter        *iter);
-static gboolean     ibus_attr_list_deserialize  (IBusAttrList           *attr_list,
-                                                 IBusMessageIter        *iter);
+                                                 GVariantBuilder        *builder);
+static gint         ibus_attr_list_deserialize  (IBusAttrList           *attr_list,
+                                                 GVariant               *variant);
 static gboolean     ibus_attr_list_copy         (IBusAttrList           *dest,
                                                  const IBusAttrList     *src);
 
@@ -76,22 +76,19 @@ ibus_attr_list_destroy (IBusAttrList *attr_list)
 
 static gboolean
 ibus_attr_list_serialize (IBusAttrList    *attr_list,
-                          IBusMessageIter *iter)
+                          GVariantBuilder *builder)
 {
-    IBusMessageIter array_iter;
     gboolean retval;
     guint i;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->serialize ((IBusSerializable *)attr_list, iter);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->serialize ((IBusSerializable *)attr_list, builder);
     g_return_val_if_fail (retval, FALSE);
 
     g_return_val_if_fail (IBUS_IS_ATTR_LIST (attr_list), FALSE);
 
-    retval = ibus_message_iter_open_container (iter,
-                                               IBUS_TYPE_ARRAY,
-                                               "v",
-                                               &array_iter);
-    g_return_val_if_fail (retval, FALSE);
+    GVariantBuilder *array;
+
+    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
 
     for (i = 0;; i++) {
         IBusAttribute *attr;
@@ -99,43 +96,32 @@ ibus_attr_list_serialize (IBusAttrList    *attr_list,
         attr = ibus_attr_list_get (attr_list, i);
         if (attr == NULL)
             break;
-
-        retval = ibus_message_iter_append (&array_iter, IBUS_TYPE_ATTRIBUTE, &attr);
-        g_return_val_if_fail (retval, FALSE);
+        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)attr));
     }
-
-    retval = ibus_message_iter_close_container (iter, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
+    // GVariant *var = g_variant_builder_end (array);
+    // g_debug ("var = %p", var);
+    g_variant_builder_add (builder, "av", array);
 
     return TRUE;
 }
 
-static gboolean
+static gint
 ibus_attr_list_deserialize (IBusAttrList    *attr_list,
-                            IBusMessageIter *iter)
+                            GVariant        *variant)
 {
-    DBusMessageIter array_iter;
-    gboolean retval;
+    gint retval;
+    GVariantIter *iter;
 
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->deserialize ((IBusSerializable *)attr_list, iter);
-    g_return_val_if_fail (retval, FALSE);
+    retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->deserialize ((IBusSerializable *)attr_list, variant);
+    g_return_val_if_fail (retval, 0);
 
-    retval = ibus_message_iter_recurse (iter, IBUS_TYPE_ARRAY, &array_iter);
-    g_return_val_if_fail (retval, FALSE);
+    g_variant_get_child (variant, retval++, "av", &iter);
 
-    while (ibus_message_iter_get_arg_type (&array_iter) != G_TYPE_INVALID) {
-        IBusAttribute *attr;
-
-        retval = ibus_message_iter_get (&array_iter, IBUS_TYPE_ATTRIBUTE, &attr);
-        g_return_val_if_fail (retval, FALSE);
-        ibus_message_iter_next (&array_iter);
-
-        ibus_attr_list_append (attr_list, attr);
+    GVariant *var = NULL;
+    while (g_variant_iter_loop (iter, "v", &var)) {
+        ibus_attr_list_append (attr_list, (IBusAttribute *)ibus_serializable_deserialize (var));
     }
-
-    ibus_message_iter_next (iter);
-
-    return TRUE;
+    return retval;
 }
 
 

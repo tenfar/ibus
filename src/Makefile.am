@@ -46,17 +46,16 @@ AM_CPPFLAGS =                           \
 	$(NULL)
 
 # ibus library
-ibustargetlib = libibus.la
-lib_LTLIBRARIES = $(ibustargetlib)
+lib_LTLIBRARIES = libibus-2.0.la
 
-libibus_la_LIBADD =         \
+libibus_2_0_la_LIBADD =     \
 	@X11_LIBS@              \
 	@GLIB2_LIBS@            \
 	@GOBJECT2_LIBS@         \
 	@GIO2_LIBS@             \
 	@DBUS_LIBS@             \
 	$(NULL)
-libibus_la_LDFLAGS =                \
+libibus_2_0_la_LDFLAGS =            \
 	-export-symbols-regex "ibus_.*" \
 	-version-info @LT_VERSION_INFO@ \
 	$(NULL)
@@ -95,7 +94,7 @@ ibus_sources =              \
 	ibuscomponent.c         \
 	ibusmainloop.c          \
 	$(NULL)
-libibus_la_SOURCES =        \
+libibus_2_0_la_SOURCES =    \
 	$(ibus_sources)         \
 	ibusmarshalers.c        \
 	ibusenumtypes.c         \
@@ -146,7 +145,7 @@ ibus_headers =              \
 	ibuscomponent.h         \
 	ibusmainloop.h          \
 	$(NULL)
-ibusincludedir = $(includedir)/ibus-1.0
+ibusincludedir = $(includedir)/ibus-2.0
 ibusinclude_HEADERS =       \
 	$(ibus_headers)         \
 	ibusenumtypes.h         \
@@ -175,13 +174,13 @@ introspection_files =               \
         ibusenumtypes.c             \
         ibusenumtypes.h             \
 		$(NULL)
-IBus-1.0.gir: $(ibustargetlib) Makefile
-IBus_1_0_gir_SCANNERFLAGS = --strip-prefix=IBus --pkg=dbus-1,glib-2.0
-IBus_1_0_gir_INCLUDES = GLib-2.0 GObject-2.0
-IBus_1_0_gir_LIBS = $(ibustargetlib)
-IBus_1_0_gir_FILES = $(addprefix $(srcdir)/,$(introspection_files))
-IBus_1_0_gir_CFLAGS =
-INTROSPECTION_GIRS += IBus-1.0.gir
+IBus-2.0.gir: $(ibustargetlib) Makefile
+IBus_2_0_gir_SCANNERFLAGS = --strip-prefix=IBus --pkg=dbus-1,glib-2.0
+IBus_2_0_gir_INCLUDES = GLib-2.0 GObject-2.0
+IBus_2_0_gir_LIBS = $(ibustargetlib)
+IBus_2_0_gir_FILES = $(addprefix $(srcdir)/,$(introspection_files))
+IBus_2_0_gir_CFLAGS =
+INTROSPECTION_GIRS += IBus-2.0.gir
 
 girdir = $(datadir)/gir-1.0
 dist_gir_DATA = $(INTROSPECTION_GIRS)

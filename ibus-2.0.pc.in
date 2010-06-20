@@ -8,4 +8,4 @@ Description: IBus Library
 Version: @VERSION@
 Requires: gobject-2.0
 Libs: -L${libdir} -libus
-Cflags: -I${includedir}/ibus-1.0
+Cflags: -I${includedir}/ibus-2.0

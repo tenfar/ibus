@@ -29,7 +29,7 @@ INCLUDES =              \
 	-I$(top_srcdir)/src \
 	$(NULL)
 
-prog_ldadd = $(top_builddir)/src/libibus.la
+prog_ldadd = $(top_builddir)/src/libibus-2.0.la
 
 noinst_PROGRAMS = $(TESTS)
 TESTS =               \

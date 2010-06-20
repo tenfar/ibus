@@ -59,11 +59,11 @@ SUBDIRS =           \
 ACLOCAL_AMFLAGS = -I m4
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = ibus-1.0.pc
+pkgconfig_DATA = ibus-2.0.pc
 
 EXTRA_DIST = \
 	autogen.sh \
-	ibus-1.0.pc.in \
+	ibus-2.0.pc.in \
 	ibus.spec.in \
 	python-config.py \
 	$(NULL)

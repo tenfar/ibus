@@ -31,10 +31,8 @@ INCLUDES =              \
 
 prog_ldadd = $(top_builddir)/src/libibus.la
 
-noinst_PROGRAMS = $(TEST_PROGS)
-TESTS = $(TEST_PROGS)
-
-TEST_PROGS =          \
+noinst_PROGRAMS = $(TESTS)
+TESTS =               \
 	ibus-bus          \
 	ibus-keynames     \
 	ibus-serializable \

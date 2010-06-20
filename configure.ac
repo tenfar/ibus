@@ -187,7 +187,7 @@ AC_ARG_ENABLE(gconf,
     [enable_gconf=$enableval],
     [enable_gconf=yes]
 )
-AM_CONDITIONAL([ENABLE_GCONF], [test "x$enable_gconf" = "xyes"])
+AM_CONDITIONAL([ENABLE_GCONF], [test x"$enable_gconf" = x"yes"])
 
 if test x"$enable_gconf" = x"yes"; then
     # check gconf
@@ -218,7 +218,8 @@ AC_ARG_ENABLE(python,
     [enable_python=yes]
 )
 
-AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enable_python" = "xyes"])
+AM_CONDITIONAL([ENABLE_PYTHON], [test x"$enable_python" = x"yes"])
+AM_CONDITIONAL([ENABLE_DAEMON], [false])
 
 if test x"$enable_python" = x"yes"; then
     # check python

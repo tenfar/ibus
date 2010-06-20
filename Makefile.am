@@ -20,32 +20,40 @@
 # Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307  USA
 
+NULL =
+
 if ENABLE_PYTHON
-PYTHON_DIRS = \
-	ibus \
-	setup \
+PYTHON_DIRS =       \
+	ibus            \
+	ui              \
+	setup           \
 	$(NULL)
 endif
 
 if ENABLE_GCONF
-GCONF_DIRS = \
-	gconf \
+GCONF_DIRS =        \
+	gconf           \
 	$(NULL)
 endif
 
-SUBDIRS = \
-	src \
-	bus \
-	util \
-	client \
-	data \
-	m4 \
-	po \
-	docs \
-	ui \
-	bindings \
-	$(PYTHON_DIRS) \
-	$(GCONF_DIRS) \
+if ENABLE_DAEMON
+DAEMON_DIRS =       \
+	bus             \
+	$(NULL)
+endif
+
+SUBDIRS =           \
+	src             \
+	util            \
+	client          \
+	data            \
+	m4              \
+	po              \
+	docs            \
+	bindings        \
+	$(DAEMON_DIRS)  \
+	$(PYTHON_DIRS)  \
+	$(GCONF_DIRS)   \
 	$(NULL)
 
 ACLOCAL_AMFLAGS = -I m4
@@ -73,6 +81,7 @@ install-data-hook:
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-gtk-doc \
 	--disable-schemas-install \
+	--disable-introspection \
 	$(NULL)
 
 dist-hook:

@@ -135,14 +135,14 @@ GType        ibus_engine_get_type       (void);
  * ibus_engine_new:
  * @name: Name of the IBusObject.
  * @path: Path for IBusService.
- * @connection: An opened IBusConnection.
+ * @connection: An opened GDBusConnection.
  * @returns: A newly allocated IBusEngine.
  *
  * New an IBusEngine.
  */
 IBusEngine  *ibus_engine_new            (const gchar        *name,
                                          const gchar        *path,
-                                         IBusConnection     *connection);
+                                         GDBusConnection     *connection);
 
 /**
  * ibus_engine_commit_text:

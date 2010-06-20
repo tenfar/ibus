@@ -73,7 +73,8 @@ struct _IBusServiceClass {
 
     /*< public >*/
     /* virtual functions */
-    void        (* method_call)     (IBusService        *service,
+    void        (* service_method_call)
+                                    (IBusService        *service,
                                      GDBusConnection    *connection,
                                      const gchar        *sender,
                                      const gchar        *object_path,
@@ -82,14 +83,16 @@ struct _IBusServiceClass {
                                      GVariant           *parameters,
                                      GDBusMethodInvocation
                                                         *invocation);
-    GVariant *  (* get_property)    (IBusService        *service,
+    GVariant *  (* service_get_property)
+                                    (IBusService        *service,
                                      GDBusConnection    *connection,
                                      const gchar        *sender,
                                      const gchar        *object_path,
                                      const gchar        *interface_name,
                                      const gchar        *property_name,
                                      GError            **error);
-    gboolean    (* set_property)    (IBusService        *service,
+    gboolean    (* service_set_property)
+                                    (IBusService        *service,
                                      GDBusConnection    *connection,
                                      const gchar        *sender,
                                      const gchar        *object_path,

@@ -29,8 +29,8 @@
 #ifndef __IBUS_SERVICE_H_
 #define __IBUS_SERVICE_H_
 
+#include <gio/gio.h>
 #include "ibusobject.h"
-#include "ibusconnection.h"
 
 /*
  * Type macros.
@@ -54,6 +54,7 @@ G_BEGIN_DECLS
 
 typedef struct _IBusService IBusService;
 typedef struct _IBusServiceClass IBusServiceClass;
+typedef struct _IBusServicePrivate IBusServicePrivate;
 
 /**
  * IBusService:
@@ -61,49 +62,44 @@ typedef struct _IBusServiceClass IBusServiceClass;
  * An opaque data type representing an IBusService.
  */
 struct _IBusService {
+    /*< private >*/
     IBusObject parent;
-    /* instance members */
+    IBusServicePrivate *priv;
 };
 
-/**
- * ServiceIBusMessageFunc:
- * @service: An IBsService.
- * @connection: Connection to IBus daemon.
- * @message: IBusMessage to be sent.
- * @returns: %TRUE if succeed; %FALSE if failed.
- *
- * Prototype of IBus service message sending callback function.
- */
-typedef gboolean  (* ServiceIBusMessageFunc)    (IBusService    *service,
-                                                 IBusConnection *connection,
-                                                 IBusMessage    *message);
-
-/**
- * ServiceIBusSignalFunc:
- * @service: An IBsService.
- * @connection: Connection to IBus daemon.
- * @message: IBusMessage to be sent.
- * @returns: %TRUE if succeed; %FALSE if failed.
- *
- * Prototype of IBus service signal sending callback function.
- */
-typedef gboolean  (* ServiceIBusSignalFunc)     (IBusService    *service,
-                                                 IBusConnection *connection,
-                                                 IBusMessage    *message);
-
 struct _IBusServiceClass {
+    /*< private >*/
     IBusObjectClass parent;
 
-    /* signals */
-    gboolean  (* ibus_message)      (IBusService    *service,
-                                     IBusConnection *connection,
-                                     IBusMessage    *message);
-    gboolean  (* ibus_signal)       (IBusService    *service,
-                                     IBusConnection *connection,
-                                     IBusMessage    *message);
+    /*< public >*/
+    /* virtual functions */
+    void        (* method_call)     (IBusService        *service,
+                                     GDBusConnection    *connection,
+                                     const gchar        *sender,
+                                     const gchar        *object_path,
+                                     const gchar        *interface_name,
+                                     const gchar        *method_name,
+                                     GVariant           *parameters,
+                                     GDBusMethodInvocation
+                                                        *invocation);
+    GVariant *  (* get_property)    (IBusService        *service,
+                                     GDBusConnection    *connection,
+                                     const gchar        *sender,
+                                     const gchar        *object_path,
+                                     const gchar        *interface_name,
+                                     const gchar        *property_name,
+                                     GError            **error);
+    gboolean    (* set_property)    (IBusService        *service,
+                                     GDBusConnection    *connection,
+                                     const gchar        *sender,
+                                     const gchar        *object_path,
+                                     const gchar        *interface_name,
+                                     const gchar        *property_name,
+                                     GVariant           *value,
+                                     GError            **error);
     /*< private >*/
     /* padding */
-    gpointer pdummy[6];
+    gpointer pdummy[5];
 };
 
 
@@ -116,8 +112,8 @@ GType            ibus_service_get_type          (void);
  *
  * New an IBusService.
  */
-IBusService     *ibus_service_new               (const gchar    *path);
-
+IBusService     *ibus_service_new               (GDBusConnection    *connection,
+                                                 const gchar        *path);
 /**
  * ibus_service_get_path:
  * @service: An IBusService.
@@ -125,65 +121,16 @@ IBusService     *ibus_service_new               (const gchar    *path);
  *
  * Returns the object path of an IBusService.
  */
-const gchar     *ibus_service_get_path          (IBusService    *service);
-
-/**
- * ibus_service_handle_message:
- * @service: An IBusService.
- * @connection: Corresponding IBusCOnnection
- * @message: IBusMessage to be handled.
- * @returns: TRUE if succeed; FALSE otherwise.
- *
- * Emit an IBusMessage on an IBusConnection.
- */
-gboolean         ibus_service_handle_message    (IBusService    *service,
-                                                 IBusConnection *connection,
-                                                 IBusMessage    *message);
-
-/**
- * ibus_service_add_to_connection:
- * @service: An IBusService.
- * @connection: Corresponding IBusCOnnection
- * @returns: TRUE if succeed; FALSE otherwise.
- *
- * Add an IBus Service to an IBusConnection.
- * This function also connects the service to the signal IBusConnection::destroy of the connection.
- */
-gboolean         ibus_service_add_to_connection (IBusService    *service,
-                                                 IBusConnection *connection);
+const gchar     *ibus_service_get_path          (IBusService        *service);
 
 /**
  * ibus_service_get_connections:
  * @service: An IBusService.
- * @returns: (transfer container) (element-type IBusConnection): A newly allocated list of connections.
+ * @returns: (transfer all) (element-type GDBusConnection): A newly allocated list of connections.
  *
- * Returns a copy of list of connections, but the caller does not own the element.
+ * Returns a copy of list of connections, but the caller also owns the element.
  */
-GList           *ibus_service_get_connections   (IBusService    *service);
-
-/**
- * ibus_service_remove_from_connection:
- * @service: An IBusService.
- * @connection: Corresponding IBusCOnnection
- * @returns: TRUE if succeed; FALSE otherwise.
- *
- * Remove an IBusService from an IBusConnection.
- * This function also disconnects the signal IBusConnection::destroy.
- */
-gboolean         ibus_service_remove_from_connection
-                                                (IBusService    *service,
-                                                 IBusConnection *connection);
-
-/**
- * ibus_service_remove_from_all_connections:
- * @service: An IBusService.
- * @returns: TRUE if succeed; FALSE otherwise.
- *
- * Remove an IBusService from all connections.
- * This function also disconnects the signal IBusConnection::destroy.
- */
-gboolean         ibus_service_remove_from_all_connections
-                                                (IBusService    *service);
+GDBusConnection *ibus_service_get_connection    (IBusService        *service);
 
 /**
  * ibus_service_send_signal:
@@ -196,13 +143,15 @@ gboolean         ibus_service_remove_from_all_connections
  *
  * Send signal to all the IBusConnections of an IBusService.
  *
- * @see_also: ibus_connection_send_signal()
+ * @see_also: g_dbus_connection_emit_signal()
  */
-gboolean         ibus_service_send_signal       (IBusService    *service,
-                                                 const gchar    *interface,
-                                                 const gchar    *name,
-                                                 GType           first_arg_type,
-                                                 ...);
+gboolean         ibus_service_emit_signal       (IBusService        *service,
+                                                 const gchar        *dest_bus_name,
+                                                 const gchar        *object_path,
+                                                 const gchar        *interface_name,
+                                                 const gchar        *signal_name,
+                                                 GVariant           *parameters,
+                                                 GError            **error);
 G_END_DECLS
 #endif
 

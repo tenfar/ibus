@@ -18,32 +18,40 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <dbus/dbus.h>
 #include "ibusservice.h"
 #include "ibusinternal.h"
 
 #define IBUS_SERVICE_GET_PRIVATE(o)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((o), IBUS_TYPE_SERVICE, IBusServicePrivate))
 
+/* XXX */
+#if 0
 enum {
-    IBUS_MESSAGE,
-    IBUS_SIGNAL,
-    LAST_SIGNAL,
+    METHOD_CALL,
+    GET_PROPERTY,
+    SET_PROPERTY,
 };
+#endif
 
 enum {
     PROP_0,
-    PROP_PATH
+    PROP_OBJECT_PATH,
+    PROP_INTERFACE_NAME,
+    PROP_INTERFACE_INFO,
+    PROP_CONNECTION,
 };
 
-/* IBusServicePriv */
+/* IBusServicePrivate */
 struct _IBusServicePrivate {
-    gchar *path;
-    GList *connections;
+    gchar *object_path;
+    gchar *interface_name;
+    GDBusInterfaceInfo *interface_info;
+    GDBusConnection *connection;
 };
-typedef struct _IBusServicePrivate IBusServicePrivate;
 
-static guint            service_signals[LAST_SIGNAL] = { 0 };
+/*
+static guint    service_signals[LAST_SIGNAL] = { 0 };
+*/
 
 /* functions prototype */
 static void     ibus_service_destroy        (IBusService        *service);
@@ -55,22 +63,20 @@ static void     ibus_service_get_property   (IBusService        *service,
                                              guint              prop_id,
                                              GValue             *value,
                                              GParamSpec         *pspec);
-static gboolean ibus_service_ibus_message   (IBusService        *service,
-                                             IBusConnection     *connection,
-                                             IBusMessage        *message);
-static gboolean ibus_service_ibus_signal    (IBusService        *service,
-                                             IBusConnection     *connection,
-                                             IBusMessage        *message);
 
 G_DEFINE_TYPE (IBusService, ibus_service, IBUS_TYPE_OBJECT)
 
 IBusService *
-ibus_service_new (const gchar *path)
+ibus_service_new (GDBusConnection *connection,
+                  const gchar     *object_path)
 {
-    GObject *obj;
-    obj = g_object_new (IBUS_TYPE_SERVICE,
-                        "path", path,
-                        NULL);
+    g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+    g_return_val_if_fail (object_path != NULL, NULL);
+
+    GObject *obj = g_object_new (IBUS_TYPE_SERVICE,
+                                 "object-path", object_path,
+                                 "connection", connection,
+                                 NULL);
     return IBUS_SERVICE (obj);
 }
 
@@ -80,32 +86,96 @@ ibus_service_class_init (IBusServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
 
-    g_type_class_add_private (klass, sizeof (IBusServicePrivate));
-
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_service_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_service_get_property;
     ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_service_destroy;
 
-    klass->ibus_message = ibus_service_ibus_message;
-    klass->ibus_signal = ibus_service_ibus_signal;
-
+#if 0
+    klass->method_call = ibus_service_method_call;
+    klass->get_property = ibus_service_ibus_signal;
+    klass->set_property = ibus_service_ibus_message;
+#endif
     /* install properties */
     /**
-     * IBusService:path:
+     * IBusService:object-path:
      *
      * The path of service object.
      */
     g_object_class_install_property (
                     gobject_class,
-                    PROP_PATH,
+                    PROP_OBJECT_PATH,
                     g_param_spec_string (
-                        "path",
+                        "object-path",
                         "object path",
                         "The path of service object",
                         NULL,
-                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY)
+                        G_PARAM_READWRITE |
+                        G_PARAM_CONSTRUCT_ONLY |
+                        G_PARAM_STATIC_NAME |
+                        G_PARAM_STATIC_NICK |
+                        G_PARAM_STATIC_BLURB)
+                    );
+    /**
+     * IBusService:interface-name:
+     *
+     * The interface name.
+     */
+    g_object_class_install_property (
+                    gobject_class,
+                    PROP_INTERFACE_NAME,
+                    g_param_spec_string (
+                        "interface-name",
+                        "interface name",
+                        "The interface name of service object",
+                        NULL,
+                        G_PARAM_READWRITE |
+                        G_PARAM_CONSTRUCT_ONLY |
+                        G_PARAM_STATIC_NAME |
+                        G_PARAM_STATIC_NICK |
+                        G_PARAM_STATIC_BLURB)
+                    );
+    /**
+     * IBusService:interface-info:
+     *
+     * The interface info.
+     */
+    g_object_class_install_property (
+                    gobject_class,
+                    PROP_INTERFACE_INFO,
+                    g_param_spec_boxed (
+                        "interface-info",
+                        "interface info",
+                        "The interface info of service object",
+                        G_TYPE_DBUS_INTERFACE_INFO,
+                        G_PARAM_READWRITE |
+                        G_PARAM_CONSTRUCT_ONLY |
+                        G_PARAM_STATIC_NAME |
+                        G_PARAM_STATIC_NICK |
+                        G_PARAM_STATIC_BLURB)
+                    );
+    /**
+     * IBusService:connection:
+     *
+     * The connection of service object.
+     */
+    g_object_class_install_property (
+                    gobject_class,
+                    PROP_CONNECTION,
+                    g_param_spec_object (
+                        "connection",
+                        "connection",
+                        "The connection of service object",
+                        G_TYPE_DBUS_CONNECTION,
+                        G_PARAM_READWRITE |
+                        G_PARAM_CONSTRUCT_ONLY |
+                        G_PARAM_STATIC_NAME |
+                        G_PARAM_STATIC_NICK |
+                        G_PARAM_STATIC_BLURB)
                     );
 
+
+    /* XXX */
+    #if 0
     /* Install signals */
     /**
      * IBusService::ibus-message:
@@ -152,43 +222,58 @@ ibus_service_class_init (IBusServiceClass *klass)
             2,
             G_TYPE_POINTER,
             G_TYPE_POINTER);
-
+    #endif
+    g_type_class_add_private (klass, sizeof (IBusServicePrivate));
 }
 
 static void
 ibus_service_init (IBusService *service)
 {
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    priv->path = NULL;
-    priv->connections = NULL;
+    service->priv = IBUS_SERVICE_GET_PRIVATE (service);
 }
 
 static void
 ibus_service_destroy (IBusService *service)
 {
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
+    g_free (service->priv->object_path);
+    service->priv->object_path = NULL;
 
-    ibus_service_remove_from_all_connections (service);
+    g_free (service->priv->interface_name);
+    service->priv->interface_name = NULL;
 
-    g_free (priv->path);
-    priv->path = NULL;
+    if (service->priv->interface_info) {
+        g_dbus_interface_info_unref (service->priv->interface_info);
+        service->priv->interface_info = NULL;
+    }
+
+    if (service->priv->connection) {
+        g_object_unref (service->priv->connection);
+        service->priv->connection = NULL;
+    }
 
     IBUS_OBJECT_CLASS(ibus_service_parent_class)->destroy (IBUS_OBJECT (service));
 }
 
 static void
-ibus_service_set_property (IBusService *service,
-    guint prop_id, const GValue *value, GParamSpec *pspec)
+ibus_service_set_property (IBusService  *service,
+                           guint         prop_id,
+                           const GValue *value,
+                           GParamSpec   *pspec)
 {
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
     switch (prop_id) {
-    case PROP_PATH:
-        priv->path = g_strdup (g_value_get_string (value));
+    case PROP_OBJECT_PATH:
+        service->priv->object_path = g_value_dup_string (value);
+        break;
+    case PROP_INTERFACE_NAME:
+        service->priv->interface_name = g_value_dup_string (value);
+        break;
+    case PROP_INTERFACE_INFO:
+        service->priv->interface_info = g_value_get_boxed (value);
+        if (service->priv->interface_info)
+            g_dbus_interface_info_ref (service->priv->interface_info);
+        break;
+    case PROP_CONNECTION:
+        service->priv->connection = g_value_dup_object (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (service, prop_id, pspec);
@@ -197,11 +282,22 @@ ibus_service_set_property (IBusService *service,
 
 static void
 ibus_service_get_property (IBusService *service,
-    guint prop_id, GValue *value, GParamSpec *pspec)
+                           guint        prop_id,
+                           GValue      *value,
+                           GParamSpec  *pspec)
 {
     switch (prop_id) {
-    case PROP_PATH:
-        g_value_set_string (value, ibus_service_get_path (service));
+    case PROP_OBJECT_PATH:
+        g_value_set_string (value, service->priv->object_path);
+        break;
+    case PROP_INTERFACE_NAME:
+        g_value_set_string (value, service->priv->interface_name);
+        break;
+    case PROP_INTERFACE_INFO:
+        g_value_set_boxed (value, service->priv->interface_info);
+        break;
+    case PROP_CONNECTION:
+        g_value_set_object (value, service->priv->connection);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (service, prop_id, pspec);
@@ -209,192 +305,36 @@ ibus_service_get_property (IBusService *service,
 }
 
 const gchar *
-ibus_service_get_path (IBusService *service)
+ibus_service_get_object_path (IBusService *service)
 {
-    g_assert (IBUS_IS_SERVICE (service));
+    g_return_val_if_fail (IBUS_IS_SERVICE (service), NULL);
+    return service->priv->object_path;
+}
 
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    return priv->path;
+GDBusConnection *
+ibus_service_get_connection (IBusService *service)
+{
+    g_return_val_if_fail (IBUS_IS_SERVICE (service), NULL);
+    return service->priv->connection;
 }
 
 gboolean
-ibus_service_handle_message (IBusService    *service,
-                             IBusConnection *connection,
-                             IBusMessage    *message)
-{
-    gboolean retval = FALSE;
-    g_return_val_if_fail (message != NULL, FALSE);
-
-    g_signal_emit (service, service_signals[IBUS_MESSAGE], 0, connection, message, &retval);
-    return retval;
-}
-
-static gboolean
-ibus_service_ibus_message (IBusService    *service,
-                           IBusConnection *connection,
-                           IBusMessage    *message)
-{
-    if (ibus_message_is_method_call (message, "", "Destroy")) {
-        IBusMessage *reply;
-        reply = ibus_message_new_method_return (message);
-        ibus_connection_send (connection, reply);
-        ibus_message_unref (reply);
-        return TRUE;
-    }
-    return FALSE;
-}
-
-static gboolean
-ibus_service_ibus_signal (IBusService    *service,
-                          IBusConnection *connection,
-                          IBusMessage    *message)
-{
-    return FALSE;
-}
-
-
-gboolean
-_service_message_function (IBusConnection *connection,
-                           IBusMessage    *message,
-                           IBusService *service)
-{
-    return ibus_service_handle_message (service, connection, message);
-}
-
-static void
-_connection_destroy_cb (IBusConnection *connection, IBusService *service)
-{
-    g_assert (IBUS_IS_CONNECTION (connection));
-    g_assert (IBUS_IS_SERVICE (service));
-
-    ibus_service_remove_from_connection (service, connection);
-}
-
-gboolean
-ibus_service_add_to_connection (IBusService *service, IBusConnection *connection)
-{
-    g_assert (IBUS_IS_SERVICE (service));
-    g_assert (IBUS_IS_CONNECTION (connection));
-
-    gboolean retval;
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    g_return_val_if_fail (priv->path != NULL, FALSE);
-    g_return_val_if_fail (g_list_find (priv->connections, connection) == NULL, FALSE);
-
-    g_object_ref_sink (connection);
-
-    retval = ibus_connection_register_object_path (connection, priv->path,
-                    (IBusMessageFunc) _service_message_function, service);
-    if (!retval) {
-        g_object_unref (connection);
-        return FALSE;
-    }
-
-    priv->connections = g_list_append (priv->connections, connection);
-    g_signal_connect (connection,
-                      "destroy",
-                      (GCallback) _connection_destroy_cb,
-                      service);
-
-    return retval;
-}
-
-GList *
-ibus_service_get_connections (IBusService *service)
-{
-    g_assert (IBUS_IS_SERVICE (service));
-
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    return g_list_copy (priv->connections);
-}
-
-gboolean
-ibus_service_remove_from_connection (IBusService *service, IBusConnection *connection)
+ibus_service_emit_signal (IBusService *service,
+                          const gchar *dest_bus_name,
+                          const gchar *object_path,
+                          const gchar *interface_name,
+                          const gchar *signal_name,
+                          GVariant    *parameters,
+                          GError    **error)
 {
     g_return_val_if_fail (IBUS_IS_SERVICE (service), FALSE);
-    g_return_val_if_fail (IBUS_IS_CONNECTION (connection), FALSE);
+    return g_dbus_connection_emit_signal (service->priv->connection,
+                                          dest_bus_name,
+                                          service->priv->object_path,
+                                          service->priv->interface_name,
+                                          signal_name,
+                                          parameters,
+                                          error);
 
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    g_assert (priv->path != NULL);
-    g_assert (g_list_find (priv->connections, connection) != NULL);
-
-    gboolean retval;
-    retval = ibus_connection_unregister_object_path (connection, priv->path);
-
-    if (!retval) {
-        return FALSE;
-    }
-
-    g_signal_handlers_disconnect_by_func (connection,
-                                          (GCallback) _connection_destroy_cb,
-                                          service);
-    priv->connections = g_list_remove (priv->connections, connection);
-    g_object_unref (connection);
-
-    return TRUE;
 }
 
-gboolean
-ibus_service_remove_from_all_connections (IBusService *service)
-{
-    g_return_val_if_fail (IBUS_IS_SERVICE (service), FALSE);
-
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    GList *element = priv->connections;
-    while (element != NULL) {
-        IBusConnection *connection = IBUS_CONNECTION (element->data);
-
-        gboolean retval;
-        retval = ibus_connection_unregister_object_path (connection, priv->path);
-
-        g_signal_handlers_disconnect_by_func (connection,
-                                              (GCallback) _connection_destroy_cb,
-                                              service);
-        g_object_unref (connection);
-        element = element->next;
-    }
-
-    g_list_free (priv->connections);
-    priv->connections = NULL;
-    return TRUE;
-}
-
-gboolean
-ibus_service_send_signal (IBusService   *service,
-                          const gchar   *interface,
-                          const gchar   *name,
-                          GType          first_arg_type,
-                          ...)
-{
-    g_assert (IBUS_IS_SERVICE (service));
-    g_assert (name != NULL);
-
-    gboolean retval;
-    va_list args;
-    GList *p;
-
-    IBusServicePrivate *priv;
-    priv = IBUS_SERVICE_GET_PRIVATE (service);
-
-    for (p = priv->connections; p != NULL; p = p->next) {
-        va_start (args, first_arg_type);
-        retval = ibus_connection_send_signal_valist ((IBusConnection *) p->data,
-                                                     priv->path,
-                                                     interface,
-                                                     name,
-                                                     first_arg_type,
-                                                     args);
-        va_end (args);
-    }
-    return retval;
-}

@@ -160,28 +160,32 @@ typedef struct _IBusConfigServiceClass IBusConfigServiceClass;
  * An opaque data type representing a configure service.
  */
 struct _IBusConfigService {
+    /*< private >*/
     IBusService parent;
+    /* IBusConfigServicePriv *priv */
+
     /* instance members */
 };
 
 struct _IBusConfigServiceClass {
+    /*< private >*/
     IBusServiceClass parent;
 
+    /*< public >*/
     /* class members */
-    gboolean    (* set_value) (IBusConfigService    *config,
-                               const gchar          *section,
-                               const gchar          *name,
-                               const GValue         *value,
-                               IBusError           **error);
-    gboolean    (* get_value) (IBusConfigService    *config,
-                               const gchar          *section,
-                               const gchar          *name,
-                               GValue               *value,
-                               IBusError           **error);
-    gboolean    (* unset)     (IBusConfigService    *config,
-                               const gchar          *section,
-                               const gchar          *name,
-                               IBusError           **error);
+    gboolean    (* set_value)   (IBusConfigService    *config,
+                                 const gchar          *section,
+                                 const gchar          *name,
+                                 GVariant             *value,
+                                 GError              **error);
+    GVariant *  (* get_value)   (IBusConfigService    *config,
+                                 const gchar          *section,
+                                 const gchar          *name,
+                                 GError              **error);
+    gboolean    (* unset_value) (IBusConfigService    *config,
+                                 const gchar          *section,
+                                 const gchar          *name,
+                                 GError              **error);
 
     /*< private >*/
     /* padding */
@@ -192,19 +196,19 @@ GType                ibus_config_service_get_type   (void);
 
 /**
  * ibus_config_service_new:
- * @connection: An IBusConnection.
+ * @connection: An GDBusConnection.
  * @returns: A newly allocated IBusConfigServices.
  *
- * New an IBusConfigService from an IBusConnection.
+ * New an IBusConfigService from an GDBusConnection.
  */
-IBusConfigService   *ibus_config_service_new        (IBusConnection     *connection);
+IBusConfigService   *ibus_config_service_new        (GDBusConnection     *connection);
 
 /**
  * ibus_config_service_value_changed:
  * @config: An IBusConfigService.
  * @section: Section name of the configuration option.
  * @name: Name of the configure option.
- * @value: GValue that holds the value.
+ * @value: GVariant that holds the value.
  *
  * Change a value of a configuration option
  * by sending a "ValueChanged" message to IBus service.
@@ -213,7 +217,7 @@ void                 ibus_config_service_value_changed
                                                     (IBusConfigService  *config,
                                                      const gchar        *section,
                                                      const gchar        *name,
-                                                     const GValue       *value);
+                                                     GVariant           *value);
 
 G_END_DECLS
 #endif

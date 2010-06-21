@@ -210,11 +210,10 @@ ibus_factory_service_method_call (IBusService           *service,
         }
         else {
             gchar *object_path = g_strdup_printf ("/org/freedesktop/IBus/Engine/%d", ++factory->priv->id);
-            GObject *engine = g_object_new (engine_type,
-                                            "engine-name", engine_name,
-                                            "object-path", object_path,
-                                            "connection",  factory->priv->connection,
-                                            NULL);
+            IBusEngine *engine = ibus_engine_new_type (engine_type,
+                                                       engine_name,
+                                                       object_path,
+                                                       factory->priv->connection);
             g_assert (engine != NULL);
             g_object_ref_sink (engine);
             factory->priv->engine_list = g_list_append (factory->priv->engine_list, engine);
@@ -285,12 +284,11 @@ ibus_factory_new (GDBusConnection *connection)
 {
     g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
 
-    GObject *object;
-    object = g_object_new (IBUS_TYPE_FACTORY,
-                           "object-path", IBUS_PATH_FACTORY,
-                           "interface-name", IBUS_INTERFACE_FACTORY,
-                           "connection", connection,
-                           NULL);
+    IBusEngine *object = g_object_new (IBUS_TYPE_FACTORY,
+                                       "object-path", IBUS_PATH_FACTORY,
+                                       "interface-name", IBUS_INTERFACE_FACTORY,
+                                       "connection", connection,
+                                       NULL);
 
     return IBUS_FACTORY (object);
 }

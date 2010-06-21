@@ -21,6 +21,9 @@
 #include "ibusshare.h"
 #include "ibusconfigservice.h"
 
+#define IBUS_CONFIG_SERVICE_GET_PRIVATE(o)  \
+   (G_TYPE_INSTANCE_GET_PRIVATE ((o), IBUS_TYPE_CONFIG_SERVICE, IBusConfigServicePrivate))
+
 enum {
     LAST_SIGNAL,
 };
@@ -112,6 +115,9 @@ ibus_config_service_class_init (IBusConfigServiceClass *klass)
 static void
 ibus_config_service_init (IBusConfigService *config)
 {
+    /*
+     * config->priv = IBUS_CONFIG_SERVICE_GET_PRIVATE (config);
+     */
 }
 
 static void

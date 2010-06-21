@@ -98,23 +98,22 @@ ibus_text_deserialize (IBusText *text,
                        GVariant *variant)
 {
     gint retval;
-    gchar *str = NULL;
-
     retval = IBUS_SERIALIZABLE_CLASS (ibus_text_parent_class)->deserialize (
                             (IBusSerializable *)text, variant);
 
-    g_variant_get_child (variant, retval++, "&s", &str);
-
+    if (text->is_static == FALSE)
+        g_free (text->text);
+    g_variant_get_child (variant, retval++, "s", &text->text);
     text->is_static = FALSE;
-    text->text = g_strdup (str);
 
-    if (text->attrs) {
+    if (text->attrs)
         g_object_unref (text->attrs);
-        text->attrs = NULL;
-    }
 
-    text->attrs = IBUS_ATTR_LIST (ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++)));
+    GVariant *var = g_variant_get_child_value (variant, retval++);
+    text->attrs = IBUS_ATTR_LIST (ibus_serializable_deserialize (var));
     g_object_ref_sink (text->attrs);
+    g_variant_unref (var);
+
     return retval;
 }
 

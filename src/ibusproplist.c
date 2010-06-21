@@ -79,16 +79,16 @@ ibus_prop_list_serialize (IBusPropList    *prop_list,
     retval = IBUS_SERIALIZABLE_CLASS (ibus_prop_list_parent_class)->serialize ((IBusSerializable *) prop_list, builder);
     g_return_val_if_fail (retval, FALSE);
 
-    GVariantBuilder *array;
-    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
+    GVariantBuilder array;
+    g_variant_builder_init (&array, G_VARIANT_TYPE ("av"));
     for (i = 0;; i++) {
         IBusProperty *prop = ibus_prop_list_get (prop_list, i);
         if (prop == NULL)
             break;
-        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)prop));
+        g_variant_builder_add (&array, "v", ibus_serializable_serialize ((IBusSerializable *)prop));
     }
 
-    g_variant_builder_add (builder, "av", array);
+    g_variant_builder_add (builder, "av", &array);
 
     return TRUE;
 }
@@ -104,12 +104,14 @@ ibus_prop_list_deserialize (IBusPropList    *prop_list,
 
     g_return_val_if_fail (IBUS_IS_PROP_LIST (prop_list), 0);
 
-    GVariantIter *iter = NULL;
-    g_variant_get_child (variant, retval++, "av", &iter);
+    GVariantIter *iter;
     GVariant *var;
+    g_variant_get_child (variant, retval++, "av", &iter);
     while (g_variant_iter_loop (iter, "v", &var)) {
         ibus_prop_list_append (prop_list, (IBusProperty *)ibus_serializable_deserialize (var));
+        g_variant_unref (var);
     }
+    g_variant_iter_free (iter);
 
     return retval;
 }

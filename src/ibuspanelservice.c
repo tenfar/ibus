@@ -37,46 +37,46 @@ static void     ibus_panel_service_service_get_property  (IBusPanelService      
                                                           GParamSpec            *pspec);
 static void     ibus_panel_service_real_destroy          (IBusPanelService      *panel);
 static gboolean ibus_panel_service_ibus_message          (IBusPanelService      *panel,
-                                                          IBusConnection        *connection,
+                                                          GDBusConnection        *connection,
                                                           IBusMessage           *message);
 static gboolean ibus_panel_service_not_implemented       (IBusPanelService      *panel,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_focus_in              (IBusPanelService      *panel,
                                                           const gchar           *input_context_path,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_focus_out             (IBusPanelService      *panel,
                                                           const gchar           *input_context_path,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_register_properties  (IBusPanelService       *panel,
                                                          IBusPropList           *prop_list,
-                                                         IBusError             **error);
+                                                         GError             **error);
 static gboolean ibus_panel_service_set_cursor_location   (IBusPanelService      *panel,
                                                           gint                   x,
                                                           gint                   y,
                                                           gint                   w,
                                                           gint                   h,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_update_auxiliary_text (IBusPanelService      *panel,
                                                           IBusText              *text,
                                                           gboolean              visible,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_update_lookup_table   (IBusPanelService      *panel,
                                                           IBusLookupTable       *lookup_table,
                                                           gboolean               visible,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_update_preedit_text   (IBusPanelService      *panel,
                                                           IBusText              *text,
                                                           guint                  cursor_pos,
                                                           gboolean               visible,
-                                                          IBusError            **error);
+                                                          GError            **error);
 static gboolean ibus_panel_service_update_property       (IBusPanelService      *panel,
                                                           IBusProperty          *prop,
-                                                          IBusError            **error);
+                                                          GError            **error);
 
 G_DEFINE_TYPE (IBusPanelService, ibus_panel_service, IBUS_TYPE_SERVICE)
 
 IBusPanelService *
-ibus_panel_service_new (IBusConnection *connection)
+ibus_panel_service_new (GDBusConnection *connection)
 {
     g_assert (IBUS_IS_CONNECTION (connection));
 
@@ -197,7 +197,7 @@ ibus_panel_service_real_destroy (IBusPanelService *panel)
 
 static gboolean
 ibus_panel_service_ibus_message (IBusPanelService *panel,
-                                 IBusConnection   *connection,
+                                 GDBusConnection   *connection,
                                  IBusMessage      *message)
 {
     g_assert (IBUS_IS_PANEL_SERVICE (panel));
@@ -244,8 +244,8 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
                                                    no_arg_methods[i].name);
         }
         else {
-            IBusError *error = NULL;
-            typedef gboolean (* NoArgFunc) (IBusPanelService *, IBusError **);
+            GError *error = NULL;
+            typedef gboolean (* NoArgFunc) (IBusPanelService *, GError **);
             NoArgFunc func;
             func = G_STRUCT_MEMBER (NoArgFunc,
                                     IBUS_PANEL_SERVICE_GET_CLASS (panel),
@@ -267,7 +267,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
 
     if (ibus_message_is_method_call (message, IBUS_INTERFACE_PANEL, "FocusIn")) {
         const gchar* input_context_path = NULL;
-        IBusError *error = NULL;
+        GError *error = NULL;
         gboolean retval;
 
         retval = ibus_message_get_args (message,
@@ -291,7 +291,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
     else if (ibus_message_is_method_call (message, IBUS_INTERFACE_PANEL, "FocusOut")) {
         const gchar* input_context_path = NULL;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -314,7 +314,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
     else if (ibus_message_is_method_call (message, IBUS_INTERFACE_PANEL, "RegisterProperties")) {
         IBusPropList *prop_list = NULL;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -340,7 +340,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
         IBusText *text = NULL;
         gboolean visible;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -368,7 +368,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
         IBusLookupTable *table = NULL;
         gboolean visible = FALSE;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -397,7 +397,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
         guint cursor_pos;
         gboolean visible;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -426,7 +426,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
     else if (ibus_message_is_method_call (message, IBUS_INTERFACE_PANEL, "UpdateProperty")) {
         IBusProperty *property = NULL;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -451,7 +451,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
     else if (ibus_message_is_method_call (message, IBUS_INTERFACE_PANEL, "SetCursorLocation")) {
         guint x, y, w, h;
         gboolean retval;
-        IBusError *error = NULL;
+        GError *error = NULL;
 
         retval = ibus_message_get_args (message,
                                         &error,
@@ -488,7 +488,7 @@ ibus_panel_service_ibus_message (IBusPanelService *panel,
 
 static gboolean
 ibus_panel_service_not_implemented (IBusPanelService *panel,
-                                    IBusError       **error) {
+                                    GError       **error) {
     if (error) {
         *error = ibus_error_new_from_printf (DBUS_ERROR_FAILED,
                                              "Not implemented");
@@ -499,7 +499,7 @@ ibus_panel_service_not_implemented (IBusPanelService *panel,
 static gboolean
 ibus_panel_service_focus_in (IBusPanelService    *panel,
                              const gchar         *input_context_path,
-                             IBusError          **error)
+                             GError          **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -507,7 +507,7 @@ ibus_panel_service_focus_in (IBusPanelService    *panel,
 static gboolean
 ibus_panel_service_focus_out (IBusPanelService    *panel,
                               const gchar         *input_context_path,
-                              IBusError          **error)
+                              GError          **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -515,7 +515,7 @@ ibus_panel_service_focus_out (IBusPanelService    *panel,
 static gboolean
 ibus_panel_service_register_properties (IBusPanelService *panel,
                                         IBusPropList     *prop_list,
-                                        IBusError       **error)
+                                        GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -526,7 +526,7 @@ ibus_panel_service_set_cursor_location (IBusPanelService *panel,
                                         gint              y,
                                         gint              w,
                                         gint              h,
-                                        IBusError       **error)
+                                        GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -535,7 +535,7 @@ static gboolean
 ibus_panel_service_update_auxiliary_text (IBusPanelService *panel,
                                           IBusText         *text,
                                           gboolean          visible,
-                                          IBusError       **error)
+                                          GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -544,7 +544,7 @@ static gboolean
 ibus_panel_service_update_lookup_table (IBusPanelService *panel,
                                         IBusLookupTable  *lookup_table,
                                         gboolean          visible,
-                                        IBusError       **error)
+                                        GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -554,7 +554,7 @@ ibus_panel_service_update_preedit_text (IBusPanelService *panel,
                                         IBusText         *text,
                                         guint             cursor_pos,
                                         gboolean          visible,
-                                        IBusError       **error)
+                                        GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }
@@ -562,7 +562,7 @@ ibus_panel_service_update_preedit_text (IBusPanelService *panel,
 static gboolean
 ibus_panel_service_update_property (IBusPanelService *panel,
                                     IBusProperty     *prop,
-                                    IBusError       **error)
+                                    GError       **error)
 {
     return ibus_panel_service_not_implemented(panel, error);
 }

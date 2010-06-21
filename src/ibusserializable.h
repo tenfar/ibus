@@ -105,6 +105,7 @@ G_BEGIN_DECLS
 
 typedef struct _IBusSerializable IBusSerializable;
 typedef struct _IBusSerializableClass IBusSerializableClass;
+typedef struct _IBusSerializablePrivate IBusSerializablePrivate;
 
 /**
  * IBusSerializable:
@@ -113,7 +114,9 @@ typedef struct _IBusSerializableClass IBusSerializableClass;
  * private to the #IBusSerializable and should never be accessed directly.
  */
 struct _IBusSerializable {
+    /*< private >*/
     IBusObject parent;
+    IBusSerializablePrivate *priv;
     /* instance members */
 };
 
@@ -157,6 +160,7 @@ typedef gint        (* IBusSerializableDeserializeFunc) (IBusSerializable       
 typedef gboolean    (* IBusSerializableCopyFunc)        (IBusSerializable       *dest,
                                                          const IBusSerializable *src);
 struct _IBusSerializableClass {
+    /*< private >*/
     IBusObjectClass parent;
 
     /* signature */

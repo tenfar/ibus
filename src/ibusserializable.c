@@ -29,7 +29,6 @@ enum {
     LAST_SIGNAL,
 };
 
-typedef struct _IBusSerializablePrivate IBusSerializablePrivate;
 struct _IBusSerializablePrivate {
     GData   *attachments;
 };
@@ -116,24 +115,18 @@ ibus_serializable_class_init     (IBusSerializableClass *klass)
 }
 
 static void
-ibus_serializable_init (IBusSerializable *object)
+ibus_serializable_init (IBusSerializable *serializable)
 {
-    IBusSerializablePrivate *priv;
-    priv = IBUS_SERIALIZABLE_GET_PRIVATE (object);
-
-    priv->attachments = NULL;
-    g_datalist_init (&priv->attachments);
+    serializable->priv = IBUS_SERIALIZABLE_GET_PRIVATE (serializable);
+    serializable->priv->attachments = NULL;
+    g_datalist_init (&serializable->priv->attachments);
 }
 
 static void
-ibus_serializable_destroy (IBusSerializable *object)
+ibus_serializable_destroy (IBusSerializable *serializable)
 {
-    IBusSerializablePrivate *priv;
-    priv = IBUS_SERIALIZABLE_GET_PRIVATE (object);
-
-    g_datalist_clear (&priv->attachments);
-
-    parent_class->destroy (IBUS_OBJECT (object));
+    g_datalist_clear (&serializable->priv->attachments);
+    parent_class->destroy (IBUS_OBJECT (serializable));
 }
 
 static GValue *
@@ -247,23 +240,16 @@ _serialize_cb (GQuark           key,
 }
 
 static gboolean
-ibus_serializable_real_serialize (IBusSerializable *object,
+ibus_serializable_real_serialize (IBusSerializable *serializable,
                                   GVariantBuilder  *builder)
 {
-    IBusSerializablePrivate *priv;
-    priv = IBUS_SERIALIZABLE_GET_PRIVATE (object);
+    GVariantBuilder array;
+    g_variant_builder_init (&array, G_VARIANT_TYPE ("a{sv}"));
 
-    GVariantBuilder *array;
-
-    array = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
-
-    g_datalist_foreach (&priv->attachments,
+    g_datalist_foreach (&serializable->priv->attachments,
                         (GDataForeachFunc) _serialize_cb,
                         &array);
-    // GVariant *var = g_variant_builder_end (array);
-    // g_debug ("var = %p", var);
-    g_variant_builder_add (builder, "a{sv}", array);
-
+    g_variant_builder_add (builder, "a{sv}", &array);
     return TRUE;
 }
 
@@ -280,7 +266,7 @@ ibus_serializable_real_deserialize (IBusSerializable *object,
     while (g_variant_iter_loop (iter, "{sv}", &key, &value)) {
         ibus_serializable_set_attachment (object, key, _g_value_deserialize (value));
     }
-
+    g_variant_iter_free (iter);
     return 2;
 }
 
@@ -354,31 +340,25 @@ ibus_serializable_set_qattachment (IBusSerializable *object,
 }
 
 const GValue *
-ibus_serializable_get_qattachment (IBusSerializable *object,
+ibus_serializable_get_qattachment (IBusSerializable *serializable,
                                    GQuark            key)
 {
 
-    g_return_val_if_fail (IBUS_IS_SERIALIZABLE (object), NULL);
+    g_return_val_if_fail (IBUS_IS_SERIALIZABLE (serializable), NULL);
     g_return_val_if_fail (key != 0, NULL);
 
-    IBusSerializablePrivate *priv;
-    priv = IBUS_SERIALIZABLE_GET_PRIVATE (object);
-
-    return (const GValue *) g_datalist_id_get_data (&priv->attachments, key);
+    return (const GValue *) g_datalist_id_get_data (&serializable->priv->attachments, key);
 }
 
 void
-ibus_serializable_remove_qattachment (IBusSerializable *object,
+ibus_serializable_remove_qattachment (IBusSerializable *serializable,
                                       GQuark            key)
 {
 
-    g_return_if_fail (IBUS_IS_SERIALIZABLE (object));
+    g_return_if_fail (IBUS_IS_SERIALIZABLE (serializable));
     g_return_if_fail (key != 0);
 
-    IBusSerializablePrivate *priv;
-    priv = IBUS_SERIALIZABLE_GET_PRIVATE (object);
-
-    g_datalist_id_remove_no_notify (&priv->attachments, key);
+    g_datalist_id_remove_no_notify (&serializable->priv->attachments, key);
 }
 
 IBusSerializable *
@@ -408,14 +388,14 @@ ibus_serializable_serialize (IBusSerializable *object)
     g_return_val_if_fail (IBUS_IS_SERIALIZABLE (object), FALSE);
     gboolean retval;
 
-    GVariantBuilder *builder;
-    builder = g_variant_builder_new (G_VARIANT_TYPE_TUPLE);
+    GVariantBuilder builder;
+    g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
-    g_variant_builder_add (builder, "s", g_type_name (G_OBJECT_TYPE (object)));
-    retval = IBUS_SERIALIZABLE_GET_CLASS (object)->serialize (object, builder);
+    g_variant_builder_add (&builder, "s", g_type_name (G_OBJECT_TYPE (object)));
+    retval = IBUS_SERIALIZABLE_GET_CLASS (object)->serialize (object, &builder);
     g_assert (retval);
 
-    return g_variant_builder_end (builder);
+    return g_variant_builder_end (&builder);
 }
 
 IBusSerializable *
@@ -434,7 +414,7 @@ ibus_serializable_deserialize (GVariant *variant)
         var = g_variant_get_variant (variant);
         break;
     case G_VARIANT_CLASS_TUPLE:
-        var = variant;
+        var = g_variant_ref (variant);
         break;
     default:
         g_return_val_if_reached (NULL);
@@ -448,6 +428,7 @@ ibus_serializable_deserialize (GVariant *variant)
     object = g_object_new (type, NULL);
 
     retval = IBUS_SERIALIZABLE_GET_CLASS (object)->deserialize (object, var);
+    g_variant_unref (var);
     if (retval)
         return object;
 

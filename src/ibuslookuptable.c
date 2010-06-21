@@ -90,9 +90,9 @@ ibus_lookup_table_serialize (IBusLookupTable *table,
     guint i;
 
     retval = IBUS_SERIALIZABLE_CLASS (ibus_lookup_table_parent_class)->serialize ((IBusSerializable *)table, builder);
-    g_return_val_if_fail (retval, FALSE);
+    g_return_val_if_fail (retval, 0);
 
-    g_return_val_if_fail (IBUS_IS_LOOKUP_TABLE (table), FALSE);
+    g_return_val_if_fail (IBUS_IS_LOOKUP_TABLE (table), 0);
 
     g_variant_builder_add (builder, "u", table->page_size);
     g_variant_builder_add (builder, "u", table->cursor_pos);
@@ -100,31 +100,27 @@ ibus_lookup_table_serialize (IBusLookupTable *table,
     g_variant_builder_add (builder, "b", table->round);
     g_variant_builder_add (builder, "i", table->orientation);
 
-    GVariantBuilder *array;
+    GVariantBuilder array;
     /* append candidates */
-    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
+    g_variant_builder_init (&array, G_VARIANT_TYPE ("av"));
     for (i = 0;; i++) {
-        IBusText *text;
-
-        text = ibus_lookup_table_get_candidate (table, i);
+        IBusText *text = ibus_lookup_table_get_candidate (table, i);
         if (text == NULL)
             break;
-        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)text));
+        g_variant_builder_add (&array, "v", ibus_serializable_serialize ((IBusSerializable *)text));
     }
-    g_variant_builder_add (builder, "av", array);
+    g_variant_builder_add (builder, "av", &array);
 
     /* append labels */
-    array = g_variant_builder_new (G_VARIANT_TYPE ("av"));
+    g_variant_builder_init (&array, G_VARIANT_TYPE ("av"));
     for (i = 0;; i++) {
-        IBusText *text;
-
-        text = ibus_lookup_table_get_label (table, i);
+        IBusText *text = ibus_lookup_table_get_label (table, i);
         if (text == NULL)
             break;
 
-        g_variant_builder_add (array, "v", ibus_serializable_serialize ((IBusSerializable *)text));
+        g_variant_builder_add (&array, "v", ibus_serializable_serialize ((IBusSerializable *)text));
     }
-    g_variant_builder_add (builder, "av", array);
+    g_variant_builder_add (builder, "av", &array);
 
     return TRUE;
 }
@@ -149,14 +145,22 @@ ibus_lookup_table_deserialize (IBusLookupTable *table,
     GVariantIter *iter;
     GVariant *var;
     // deserialize candidates
+    iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
-    while (g_variant_iter_loop (iter, "v", &var))
+    while (g_variant_iter_loop (iter, "v", &var)) {
         ibus_lookup_table_append_candidate (table, (IBusText *)ibus_serializable_deserialize (var));
+        g_variant_unref (var);
+    }
+    g_variant_iter_free (iter);
 
     // deserialize labels
+    iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
-    while (g_variant_iter_loop (iter, "v", &var))
+    while (g_variant_iter_loop (iter, "v", &var)) {
         ibus_lookup_table_append_label (table, (IBusText *)ibus_serializable_deserialize (var));
+        g_variant_unref (var);
+    }
+    g_variant_iter_free (iter);
 
     return retval;
 }

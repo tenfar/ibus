@@ -150,8 +150,6 @@ GDBusConnection *ibus_service_get_connection    (IBusService        *service);
  */
 gboolean         ibus_service_emit_signal       (IBusService        *service,
                                                  const gchar        *dest_bus_name,
-                                                 const gchar        *object_path,
-                                                 const gchar        *interface_name,
                                                  const gchar        *signal_name,
                                                  GVariant           *parameters,
                                                  GError            **error);

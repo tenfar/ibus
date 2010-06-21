@@ -80,8 +80,9 @@ static gboolean  ibus_factory_service_set_property
                                               const gchar        *property_name,
                                               GVariant           *value,
                                               GError            **error);
-static void     _engine_destroy_cb          (IBusEngine         *engine,
-                                             IBusFactory        *factory);
+static void      ibus_factory_engine_destroy_cb
+                                             (IBusEngine         *engine,
+                                              IBusFactory        *factory);
 
 G_DEFINE_TYPE (IBusFactory, ibus_factory, IBUS_TYPE_SERVICE)
 
@@ -175,13 +176,10 @@ ibus_factory_get_property (IBusFactory *factory,
 }
 
 static void
-_engine_destroy_cb (IBusEngine  *engine,
-                    IBusFactory *factory)
+ibus_factory_engine_destroy_cb (IBusEngine  *engine,
+                                IBusFactory *factory)
 {
-    IBusFactoryPrivate *priv;
-    priv = IBUS_FACTORY_GET_PRIVATE (factory);
-
-    priv->engine_list = g_list_remove (priv->engine_list, engine);
+    factory->priv->engine_list = g_list_remove (factory->priv->engine_list, engine);
     g_object_unref (engine);
 }
 
@@ -222,7 +220,7 @@ ibus_factory_service_method_call (IBusService           *service,
             factory->priv->engine_list = g_list_append (factory->priv->engine_list, engine);
             g_signal_connect (engine,
                               "destroy",
-                              G_CALLBACK (_engine_destroy_cb),
+                              G_CALLBACK (ibus_factory_engine_destroy_cb),
                               factory);
             g_dbus_method_invocation_return_value (invocation,
                                                    g_variant_new ("(o)", object_path));
@@ -302,12 +300,9 @@ ibus_factory_add_engine (IBusFactory *factory,
                          const gchar *engine_name,
                          GType        engine_type)
 {
-    g_assert (IBUS_IS_FACTORY (factory));
-    g_assert (engine_name);
-    g_assert (g_type_is_a (engine_type, IBUS_TYPE_ENGINE));
+    g_return_if_fail (IBUS_IS_FACTORY (factory));
+    g_return_if_fail (engine_name != NULL);
+    g_return_if_fail (g_type_is_a (engine_type, IBUS_TYPE_ENGINE));
 
-    IBusFactoryPrivate *priv;
-    priv = IBUS_FACTORY_GET_PRIVATE (factory);
-
-    g_hash_table_insert (priv->engine_table, g_strdup (engine_name), (gpointer) engine_type);
+    g_hash_table_insert (factory->priv->engine_table, g_strdup (engine_name), (gpointer) engine_type);
 }

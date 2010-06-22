@@ -53,19 +53,6 @@ static void      ibus_object_real_destroy   (IBusObject         *obj);
 
 G_DEFINE_TYPE (IBusObject, ibus_object, G_TYPE_INITIALLY_UNOWNED)
 
-/**
- * ibus_object_new:
- *
- * Creates a new instance of an #IBusObject.
- *
- * Returns: a new instance of #IBusObject.
- */
-IBusObject *
-ibus_object_new (void)
-{
-    return IBUS_OBJECT (g_object_new (IBUS_TYPE_OBJECT, NULL));
-}
-
 static void
 ibus_object_class_init     (IBusObjectClass *klass)
 {
@@ -155,7 +142,7 @@ ibus_object_dispose (IBusObject *obj)
 static void
 ibus_object_finalize (IBusObject *obj)
 {
-#ifdef DEBUG_MEMORY 
+#ifdef DEBUG_MEMORY
     guint count;
 
     _count --;
@@ -173,9 +160,25 @@ ibus_object_real_destroy (IBusObject *obj)
     g_signal_handlers_destroy (obj);
 }
 
+/**
+ * ibus_object_new:
+ *
+ * Creates a new instance of an #IBusObject.
+ *
+ * Returns: a new instance of #IBusObject.
+ */
+IBusObject *
+ibus_object_new (void)
+{
+    GObject *object = g_object_new (IBUS_TYPE_OBJECT, NULL);
+    return IBUS_OBJECT (object);
+}
+
 void
 ibus_object_destroy (IBusObject *obj)
 {
+    g_return_if_fail (IBUS_IS_OBJECT (obj));
+
     if (! (IBUS_OBJECT_FLAGS (obj) & IBUS_IN_DESTRUCTION)) {
         g_object_run_dispose (G_OBJECT (obj));
     }

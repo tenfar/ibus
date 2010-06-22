@@ -704,7 +704,7 @@ ibus_bus_register_component (IBusBus       *bus,
 static GList *
 ibus_bus_do_list_engines (IBusBus *bus, gboolean active_engines_only)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
 
     GList *retval = NULL;
     GVariant *result;
@@ -758,6 +758,7 @@ _config_destroy_cb (IBusConfig *config,
 IBusConfig *
 ibus_bus_get_config (IBusBus *bus)
 {
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
     /* FIXME */
     return NULL;
 #if 0
@@ -781,7 +782,7 @@ ibus_bus_get_config (IBusBus *bus)
 gboolean
 ibus_bus_get_use_sys_layout (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
 
     gboolean retval = FALSE;
     GVariant *result;
@@ -804,7 +805,7 @@ ibus_bus_get_use_sys_layout (IBusBus *bus)
 gboolean
 ibus_bus_get_use_global_engine (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
 
     gboolean retval = FALSE;
     GVariant *result;
@@ -827,7 +828,7 @@ ibus_bus_get_use_global_engine (IBusBus *bus)
 gboolean
 ibus_bus_is_global_engine_enabled (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
 
     gboolean retval = FALSE;
     GVariant *result;
@@ -850,40 +851,34 @@ ibus_bus_is_global_engine_enabled (IBusBus *bus)
 IBusEngineDesc *
 ibus_bus_get_global_engine (IBusBus *bus)
 {
-    /* FIXME */
-    return NULL;
-#if 0
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
 
-    IBusMessage *reply = NULL;
-    IBusError *error = NULL;
-    IBusEngineDesc *global_engine = NULL;
+    GVariant *result;
+    IBusEngineDesc *engine = NULL;
+    result = ibus_bus_call (bus,
+                            IBUS_SERVICE_IBUS,
+                            IBUS_PATH_IBUS,
+                            IBUS_INTERFACE_IBUS,
+                            "GetGlobalEngine",
+                            NULL,
+                            G_VARIANT_TYPE ("(v)"));
 
-    reply = ibus_bus_call_with_reply (bus,
-                                      IBUS_SERVICE_IBUS,
-                                      IBUS_PATH_IBUS,
-                                      IBUS_INTERFACE_IBUS,
-                                      "GetGlobalEngine",
-                                      G_TYPE_INVALID);
-    if (reply) {
-        if (!ibus_message_get_args (reply, &error, IBUS_TYPE_ENGINE_DESC,
-                                    &global_engine, G_TYPE_INVALID)) {
-            g_warning ("%s: %s", error->name, error->message);
-            ibus_error_free (error);
-        }
-
-        ibus_message_unref (reply);
+    if (result) {
+        GVariant *variant = NULL;
+        g_variant_get (result, "(v)", &variant);
+        engine = IBUS_ENGINE_DESC (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
+        g_variant_unref (result);
     }
 
-    return global_engine;
-#endif
+    return engine;
 }
 
 gboolean
 ibus_bus_set_global_engine (IBusBus     *bus,
                             const gchar *global_engine)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
 
     GVariant *result;
     result = ibus_bus_call (bus,

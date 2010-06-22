@@ -34,7 +34,6 @@ struct _IBusComponentPrivate {
     // TRUE if the component needs to be restarted when it dies.
     gboolean restart;
 };
-typedef struct _IBusComponentPrivate IBusComponentPrivate;
 
 #define IBUS_COMPONENT_GET_PRIVATE(o)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((o), IBUS_TYPE_COMPONENT, IBusComponentPrivate))
@@ -76,30 +75,15 @@ ibus_component_class_init (IBusComponentClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_component_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_component_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_component_copy;
-
-    g_string_append (serializable_class->signature, "ssssssssavav");
 }
 
 
 static void
 ibus_component_init (IBusComponent *component)
 {
-    component->name = NULL;
-    component->description = NULL;
-    component->version = NULL;
-    component->license = NULL;
-    component->author = NULL;
-    component->homepage = NULL;
-    component->exec = NULL;
-    component->textdomain = NULL;
-    component->engines = NULL;
-    component->observed_paths = NULL;
-    component->pid = 0;
-    component->child_source_id = 0;
-
-    IBusComponentPrivate * priv = IBUS_COMPONENT_GET_PRIVATE (component);
-    priv->verbose = FALSE;
-    priv->restart = FALSE;
+    component->priv = IBUS_COMPONENT_GET_PRIVATE (component);
+    component->priv->verbose = FALSE;
+    component->priv->restart = FALSE;
 }
 
 static void
@@ -700,7 +684,5 @@ void
 ibus_component_set_restart (IBusComponent *component, gboolean restart)
 {
     g_assert (IBUS_IS_COMPONENT (component));
-
-    IBusComponentPrivate *priv = IBUS_COMPONENT_GET_PRIVATE (component);
-    priv->restart = restart;
+    component->priv->restart = restart;
 }

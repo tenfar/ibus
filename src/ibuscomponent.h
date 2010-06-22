@@ -65,6 +65,7 @@ G_BEGIN_DECLS
 
 typedef struct _IBusComponent IBusComponent;
 typedef struct _IBusComponentClass IBusComponentClass;
+typedef struct _IBusComponentPrivate IBusComponentPrivate;
 
 /**
  * IBusComponent:
@@ -80,7 +81,9 @@ typedef struct _IBusComponentClass IBusComponentClass;
  * An IBusComponent stores component information.
  */
 struct _IBusComponent {
+    /*< private >*/
     IBusSerializable parent;
+    IBusComponentPrivate *priv;
     /* instance members */
 
     /*< public >*/

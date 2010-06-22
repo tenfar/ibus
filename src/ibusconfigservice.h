@@ -128,7 +128,6 @@
 #ifndef __IBUS_CONFIG_SERVICE_H_
 #define __IBUS_CONFIG_SERVICE_H_
 
-#include "ibuserror.h"
 #include "ibusservice.h"
 
 /*

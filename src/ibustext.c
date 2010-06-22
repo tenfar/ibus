@@ -44,8 +44,6 @@ ibus_text_class_init (IBusTextClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_text_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_text_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_text_copy;
-
-    g_string_append (serializable_class->signature, "sv");
 }
 
 static void

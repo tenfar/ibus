@@ -78,88 +78,6 @@ ibus_proxy_class_init (IBusProxyClass *klass)
             G_TYPE_NONE, 0);
 }
 
-#if 0
-static GObject *
-ibus_proxy_constructor (GType           type,
-                        guint           n_construct_params,
-                        GObjectConstructParam *construct_params)
-{
-    GObject *obj;
-    IBusProxy *proxy;
-    IBusProxyPrivate *priv;
-
-    obj = G_OBJECT_CLASS (ibus_proxy_parent_class)->constructor (type, n_construct_params, construct_params);
-
-    proxy = IBUS_PROXY (obj);
-    priv = IBUS_PROXY_GET_PRIVATE (proxy);
-
-    if (priv->connection == NULL) {
-        g_object_unref (proxy);
-        return NULL;
-    }
-
-    if (priv->name != NULL) {
-        IBusError *error;
-        gchar *rule;
-
-        if (ibus_proxy_get_unique_name (proxy) == NULL) {
-            g_object_unref (proxy);
-            return NULL;
-        }
-
-        rule = g_strdup_printf ("type='signal',"
-                                "sender='"      DBUS_SERVICE_DBUS   "',"
-                                "path='"        DBUS_PATH_DBUS      "',"
-                                "interface='"   DBUS_INTERFACE_DBUS "',"
-                                "member='NameOwnerChanged',"
-                                "arg0='%s'",
-                                priv->unique_name);
-
-        if (!ibus_connection_call (priv->connection,
-                                   DBUS_SERVICE_DBUS,
-                                   DBUS_PATH_DBUS,
-                                   DBUS_INTERFACE_DBUS,
-                                   "AddMatch",
-                                   &error,
-                                   G_TYPE_STRING, &rule,
-                                   G_TYPE_INVALID)) {
-            g_warning ("%s: %s", error->name, error->message);
-            ibus_error_free (error);
-        }
-        g_free (rule);
-
-        rule =  g_strdup_printf ("type='signal',"
-                                 "sender='%s',"
-                                 "path='%s'",
-                                 priv->unique_name,
-                                 priv->path);
-
-        if (!ibus_connection_call (priv->connection,
-                                   DBUS_SERVICE_DBUS,
-                                   DBUS_PATH_DBUS,
-                                   DBUS_INTERFACE_DBUS,
-                                   "AddMatch",
-                                   &error,
-                                   G_TYPE_STRING, &rule,
-                                   G_TYPE_INVALID)) {
-            g_warning ("%s: %s", error->name, error->message);
-            ibus_error_free (error);
-        }
-        g_free (rule);
-    }
-    g_signal_connect (priv->connection,
-                      "ibus-signal",
-                      (GCallback) _connection_ibus_signal_cb,
-                      proxy);
-
-    g_signal_connect (priv->connection,
-                      "destroy",
-                      (GCallback) _connection_destroy_cb,
-                      proxy);
-    return obj;
-}
-#endif
-
 static void
 ibus_proxy_init (IBusProxy *proxy)
 {
@@ -198,87 +116,6 @@ ibus_proxy_dispose (GObject *object)
 static void
 ibus_proxy_real_destroy (IBusProxy *proxy)
 {
-    /* FIXME */
-#if 0
-    IBusProxyPrivate *priv;
-    priv = IBUS_PROXY_GET_PRIVATE (proxy);
-
-    if (priv->connection) {
-        /* disconnect signal handlers */
-        g_signal_handlers_disconnect_by_func (priv->connection,
-                                              (GCallback) _connection_ibus_signal_cb,
-                                              proxy);
-        g_signal_handlers_disconnect_by_func (priv->connection,
-                                              (GCallback) _connection_destroy_cb,
-                                              proxy);
-
-        /* remove match rules */
-        if (priv->name != NULL && ibus_connection_is_connected (priv->connection)) {
-
-            IBusError *error;
-            gchar *rule;
-
-            rule = g_strdup_printf ("type='signal',"
-                                    "sender='"      DBUS_SERVICE_DBUS   "',"
-                                    "path='"        DBUS_PATH_DBUS      "',"
-                                    "interface='"   DBUS_INTERFACE_DBUS "',"
-                                    "member='NameOwnerChanged',"
-                                    "arg0='%s'",
-                                    priv->unique_name);
-
-            if (!ibus_connection_call (priv->connection,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "RemoveMatch",
-                                       &error,
-                                       G_TYPE_STRING, &rule,
-                                       G_TYPE_INVALID)) {
-
-                g_warning ("%s: %s", error->name, error->message);
-                ibus_error_free (error);
-            }
-            g_free (rule);
-
-            rule =  g_strdup_printf ("type='signal',"
-                                     "sender='%s',"
-                                     "path='%s'",
-                                     priv->unique_name,
-                                     priv->path);
-
-            if (!ibus_connection_call (priv->connection,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "RemoveMatch",
-                                       &error,
-                                       G_TYPE_STRING, &rule,
-                                       G_TYPE_INVALID)) {
-
-                g_warning ("%s: %s", error->name, error->message);
-                ibus_error_free (error);
-            }
-            g_free (rule);
-
-        }
-    }
-
-    g_free (priv->name);
-    g_free (priv->unique_name);
-    g_free (priv->path);
-    g_free (priv->interface);
-
-    priv->name = NULL;
-    priv->path = NULL;
-    priv->interface = NULL;
-
-    if (priv->connection) {
-        g_object_unref (priv->connection);
-        priv->connection = NULL;
-    }
-
-    IBUS_OBJECT_CLASS(ibus_proxy_parent_class)->destroy (IBUS_OBJECT (proxy));
-#endif
 }
 
 static void
@@ -293,6 +130,8 @@ ibus_proxy_connection_closed_cb (GDBusConnection *connection,
 void
 ibus_proxy_destroy (IBusProxy *proxy)
 {
+    g_return_if_fail (IBUS_IS_PROXY (proxy));
+
     if (! (IBUS_PROXY_FLAGS (proxy) & IBUS_IN_DESTRUCTION)) {
         g_object_run_dispose (G_OBJECT (proxy));
     }

@@ -43,8 +43,6 @@ ibus_attr_list_class_init (IBusAttrListClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_attr_list_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_attr_list_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_attr_list_copy;
-
-    g_string_append (serializable_class->signature, "av");
 }
 
 static void

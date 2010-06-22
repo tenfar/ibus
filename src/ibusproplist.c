@@ -43,8 +43,6 @@ ibus_prop_list_class_init (IBusPropListClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_prop_list_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_prop_list_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_prop_list_copy;
-
-    g_string_append (serializable_class->signature, "av");
 }
 
 static void

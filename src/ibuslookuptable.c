@@ -43,8 +43,6 @@ ibus_lookup_table_class_init (IBusLookupTableClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_lookup_table_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_lookup_table_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_lookup_table_copy;
-
-    g_string_append (serializable_class->signature, "uubbiavav");
 }
 
 static void

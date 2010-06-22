@@ -1,6 +1,6 @@
 #include "ibus.h"
-#include "gvarianttypeinfo.h"
 
+void g_variant_type_info_assert_no_infos (void);
 
 void test_serializable (IBusSerializable *object)
 {
@@ -24,7 +24,6 @@ void test_serializable (IBusSerializable *object)
     g_assert_cmpstr (s1, ==, s2);
     g_free (s1);
     g_free (s2);
-    g_variant_type_info_assert_no_infos ();
 }
 
 static void
@@ -42,6 +41,7 @@ test_attr_list (void)
     ibus_attr_list_append (list, ibus_attribute_new (3, 1, 1, 2));
     ibus_attr_list_append (list, ibus_attribute_new (3, 1, 1, 2));
     test_serializable ((IBusSerializable *)list);
+    g_variant_type_info_assert_no_infos ();
 }
 
 static void
@@ -51,6 +51,7 @@ test_text (void)
     test_serializable ((IBusSerializable *)ibus_text_new_from_string ("Hello"));
     test_serializable ((IBusSerializable *)ibus_text_new_from_string ("Hello"));
     test_serializable ((IBusSerializable *)ibus_text_new_from_string ("Hello"));
+    g_variant_type_info_assert_no_infos ();
 }
 
 static void
@@ -64,6 +65,7 @@ test_engine_desc (void)
                                         "Peng Huang <shawn.p.huang@gmail.com>",
                                         "icon",
                                         "en"));
+    g_variant_type_info_assert_no_infos ();
 }
 
 static void
@@ -87,21 +89,32 @@ test_lookup_table (void)
     ibus_lookup_table_append_label (table, ibus_text_new_from_static_string ("Hello"));
     ibus_lookup_table_append_label (table, ibus_text_new_from_static_string ("Cool"));
     test_serializable ((IBusSerializable *)table);
-
+    g_variant_type_info_assert_no_infos ();
 }
 
 static void
 test_property (void)
 {
+    IBusPropList *list = ibus_prop_list_new ();
+    ibus_prop_list_append (list, ibus_property_new ("sub1",
+                                                    PROP_TYPE_NORMAL,
+                                                    ibus_text_new_from_static_string ("label_sub1"),
+                                                    "icon_sub1",
+                                                    ibus_text_new_from_static_string ("tooltip_sub1"),
+                                                    TRUE,
+                                                    TRUE,
+                                                    PROP_STATE_UNCHECKED,
+                                                    NULL));
     test_serializable ((IBusSerializable *)ibus_property_new ("key",
                                                           PROP_TYPE_NORMAL,
-                                                          ibus_text_new_from_string ("label"),
+                                                          ibus_text_new_from_static_string ("label"),
                                                           "icon",
                                                           ibus_text_new_from_static_string ("tooltip"),
                                                           TRUE,
                                                           TRUE,
                                                           PROP_STATE_UNCHECKED,
-                                                          ibus_prop_list_new ()));
+                                                          list));
+    g_variant_type_info_assert_no_infos ();
 }
 
 

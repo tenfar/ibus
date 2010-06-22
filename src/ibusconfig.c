@@ -98,7 +98,7 @@ ibus_config_class_init (IBusConfigClass *klass)
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
-            ibus_marshal_VOID__STRING_STRING_BOXED,
+            ibus_marshal_VOID__STRING_STRING_VARIANT,
             G_TYPE_NONE,
             3,
             G_TYPE_STRING,
@@ -150,7 +150,7 @@ ibus_config_new (GDBusConnection  *connection,
                  GCancellable     *cancellable,
                  GError          **error)
 {
-    g_assert (G_IS_DBUS_CONNECTION (connection));
+    g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
 
     GInitable *initable;
 
@@ -173,9 +173,9 @@ ibus_config_get_value (IBusConfig  *config,
                        const gchar *section,
                        const gchar *name)
 {
-    g_assert (IBUS_IS_CONFIG (config));
-    g_assert (section != NULL);
-    g_assert (name != NULL);
+    g_return_val_if_fail (IBUS_IS_CONFIG (config), NULL);
+    g_return_val_if_fail (section != NULL, NULL);
+    g_return_val_if_fail (name != NULL, NULL);
 
     GError *error = NULL;
     GVariant *result;
@@ -208,10 +208,10 @@ ibus_config_set_value (IBusConfig   *config,
                        const gchar  *name,
                        GVariant     *value)
 {
-    g_assert (IBUS_IS_CONFIG (config));
-    g_assert (section != NULL);
-    g_assert (name != NULL);
-    g_assert (value != NULL);
+    g_return_val_if_fail (IBUS_IS_CONFIG (config), FALSE);
+    g_return_val_if_fail (section != NULL, FALSE);
+    g_return_val_if_fail (name != NULL, FALSE);
+    g_return_val_if_fail (value != NULL, FALSE);
 
     GError *error = NULL;
     GVariant *result;
@@ -238,9 +238,9 @@ ibus_config_unset (IBusConfig   *config,
                    const gchar  *section,
                    const gchar  *name)
 {
-    g_assert (IBUS_IS_CONFIG (config));
-    g_assert (section != NULL);
-    g_assert (name != NULL);
+    g_return_val_if_fail (IBUS_IS_CONFIG (config), FALSE);
+    g_return_val_if_fail (section != NULL, FALSE);
+    g_return_val_if_fail (name != NULL, FALSE);
 
     GError *error = NULL;
     GVariant *result;

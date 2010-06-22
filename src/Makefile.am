@@ -62,7 +62,6 @@ libibus_2_0_la_LDFLAGS =            \
 
 ibus_sources =              \
 	ibusshare.c             \
-	ibusinternal.c          \
 	ibusobject.c            \
 	ibusserializable.c      \
 	ibusproxy.c             \
@@ -87,7 +86,6 @@ ibus_sources =              \
 	ibusenginedesc.c        \
 	ibusobservedpath.c      \
 	ibuscomponent.c         \
-	ibusmainloop.c          \
 	$(NULL)
 libibus_2_0_la_SOURCES =    \
 	$(ibus_sources)         \
@@ -133,7 +131,6 @@ ibus_headers =              \
 	ibusenginedesc.h        \
 	ibusobservedpath.h      \
 	ibuscomponent.h         \
-	ibusmainloop.h          \
 	$(NULL)
 ibusincludedir = $(includedir)/ibus-2.0
 ibusinclude_HEADERS =       \
@@ -142,7 +139,6 @@ ibusinclude_HEADERS =       \
 	$(NULL)
 
 ibus_privite_headers =      \
-	ibusinternal.h          \
 	ibusconfigprivate.h     \
 	keyname-table.h         \
 	$(NULL)

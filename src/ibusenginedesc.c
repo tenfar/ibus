@@ -63,8 +63,6 @@ ibus_engine_desc_class_init (IBusEngineDescClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_engine_desc_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_engine_desc_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_engine_desc_copy;
-
-    g_string_append (serializable_class->signature, "ssssssssu");
 }
 
 static void

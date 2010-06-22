@@ -219,8 +219,6 @@ ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *klass)
 
     klass->trigger = ibus_hotkey_profile_trigger;
 
-    g_string_append (serializable_class->signature, "av");
-
     /* install signals */
     /**
      * IBusHotkeyProfile::trigger:

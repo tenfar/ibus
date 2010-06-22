@@ -18,7 +18,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <dbus/dbus.h>
 #include "ibusinternal.h"
 #include "ibusserializable.h"
 
@@ -86,16 +85,11 @@ ibus_serializable_new (void)
 static void
 ibus_serializable_base_init     (IBusSerializableClass *klass)
 {
-    /* init signature */
-    klass->signature = g_string_new ("a{sv}");
 }
 
 static void
 ibus_serializable_base_fini     (IBusSerializableClass *klass)
 {
-    /* init signature */
-    g_string_free (klass->signature, TRUE);
-    klass->signature = NULL;
 }
 
 static void

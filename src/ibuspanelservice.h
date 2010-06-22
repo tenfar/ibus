@@ -28,7 +28,6 @@
 #ifndef __IBUS_PANEL_SERVICE_H_
 #define __IBUS_PANEL_SERVICE_H_
 
-#include "ibusconnection.h"
 #include "ibuslookuptable.h"
 #include "ibusservice.h"
 #include "ibusproplist.h"

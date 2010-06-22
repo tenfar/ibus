@@ -22,7 +22,6 @@
 #define __IBUS_H_
 
 #include <ibusversion.h>
-#include <ibusmainloop.h>
 #include <ibusshare.h>
 #include <ibusobject.h>
 #include <ibusserializable.h>
@@ -47,7 +46,6 @@
 #include <ibuscomponent.h>
 #include <ibusconfig.h>
 #include <ibusconfigservice.h>
-#include <ibusmainloop.h>
 
 #endif
 

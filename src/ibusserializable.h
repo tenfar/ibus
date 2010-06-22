@@ -46,7 +46,6 @@
 #define __IBUS_SERIALIZABLE_H_
 
 #include "ibusobject.h"
-#include "ibusmessage.h"
 
 /*
  * Type macros.
@@ -162,9 +161,6 @@ typedef gboolean    (* IBusSerializableCopyFunc)        (IBusSerializable       
 struct _IBusSerializableClass {
     /*< private >*/
     IBusObjectClass parent;
-
-    /* signature */
-    GString *signature;
 
     /* virtual table */
     gboolean    (* serialize)   (IBusSerializable       *object,

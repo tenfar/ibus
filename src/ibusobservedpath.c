@@ -65,15 +65,12 @@ ibus_observed_path_class_init (IBusObservedPathClass *klass)
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_observed_path_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_observed_path_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_observed_path_copy;
-
-    g_string_append (serializable_class->signature, "sx");
 }
 
 
 static void
 ibus_observed_path_init (IBusObservedPath *path)
 {
-    path->path = NULL;
 }
 
 static void

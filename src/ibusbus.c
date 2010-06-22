@@ -144,7 +144,7 @@ ibus_bus_class_init (IBusBusClass *klass)
 
     g_type_class_add_private (klass, sizeof (IBusBusPrivate));
 }
-
+#if 0
 static gboolean
 _connection_ibus_signal_cb (GDBusConnection *connection,
                             IBusMessage    *message,
@@ -157,6 +157,7 @@ _connection_ibus_signal_cb (GDBusConnection *connection,
     }
     return FALSE;
 }
+#endif
 
 static void
 _connection_closed_cb (GDBusConnection  *connection,
@@ -175,9 +176,11 @@ _connection_closed_cb (GDBusConnection  *connection,
     g_signal_handlers_disconnect_by_func (bus->priv->connection,
                                           G_CALLBACK (_connection_closed_cb),
                                           bus);
+#if 0
     g_signal_handlers_disconnect_by_func (bus->priv->connection,
                                           G_CALLBACK (_connection_ibus_signal_cb),
                                           bus);
+#endif
     g_object_unref (bus->priv->connection);
     bus->priv->connection = NULL;
 

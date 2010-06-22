@@ -65,8 +65,6 @@ ibus_sources =              \
 	ibusinternal.c          \
 	ibusobject.c            \
 	ibusserializable.c      \
-	ibusconnection.c        \
-	ibusserver.c            \
 	ibusproxy.c             \
 	ibusservice.c           \
 	ibusfactory.c           \
@@ -82,9 +80,6 @@ ibus_sources =              \
 	ibusconfig.c            \
 	ibusconfigservice.c     \
 	ibuspanelservice.c      \
-	ibusmessage.c           \
-	ibuspendingcall.c       \
-	ibuserror.c             \
 	ibusbus.c               \
 	ibuskeynames.c          \
 	ibushotkey.c            \
@@ -115,8 +110,6 @@ ibus_headers =              \
 	ibusdebug.h             \
 	ibusobject.h            \
 	ibusserializable.h      \
-	ibusconnection.h        \
-	ibusserver.h            \
 	ibusproxy.h             \
 	ibusservice.h           \
 	ibusfactory.h           \
@@ -132,9 +125,6 @@ ibus_headers =              \
 	ibusconfig.h            \
 	ibusconfigservice.h     \
 	ibuspanelservice.h      \
-	ibusmessage.h           \
-	ibuspendingcall.h       \
-	ibuserror.h             \
 	ibuskeysyms.h           \
 	ibustypes.h             \
 	ibusbus.h               \

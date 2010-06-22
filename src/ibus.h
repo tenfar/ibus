@@ -29,9 +29,7 @@
 #include <ibusattribute.h>
 #include <ibusattrlist.h>
 #include <ibustext.h>
-#include <ibusconnection.h>
-#include <ibusserver.h>
-// #include <ibusproxy.h>
+#include <ibusproxy.h>
 #include <ibusservice.h>
 #include <ibusfactory.h>
 #include <ibusengine.h>
@@ -41,9 +39,6 @@
 #include <ibusbus.h>
 #include <ibuskeysyms.h>
 #include <ibuskeymap.h>
-#include <ibusmessage.h>
-#include <ibuspendingcall.h>
-#include <ibuserror.h>
 #include <ibusenumtypes.h>
 #include <ibushotkey.h>
 #include <ibusxml.h>

@@ -16,9 +16,9 @@ void test_serializable (IBusSerializable *object)
     g_variant_unref (variant);
 
     variant = ibus_serializable_serialize (object);
+    g_object_unref (object);
     g_variant_get_data (variant);
     s2 = g_variant_print (variant, TRUE);
-    g_object_unref (object);
     g_variant_unref (variant);
 
     g_assert_cmpstr (s1, ==, s2);

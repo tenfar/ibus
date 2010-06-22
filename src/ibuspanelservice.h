@@ -72,67 +72,67 @@ struct _IBusPanelServiceClass {
     /* class members */
     gboolean (* focus_in)                  (IBusPanelService       *panel,
                                             const gchar            *input_context_path,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* focus_out)                 (IBusPanelService       *panel,
                                             const gchar            *input_context_path,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* register_properties)       (IBusPanelService       *panel,
                                             IBusPropList           *prop_list,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* set_cursor_location)       (IBusPanelService       *panel,
                                             gint                    x,
                                             gint                    y,
                                             gint                    w,
                                             gint                    h,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* update_auxiliary_text)     (IBusPanelService       *panel,
                                             IBusText               *text,
                                             gboolean                visible,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* update_lookup_table)       (IBusPanelService       *panel,
                                             IBusLookupTable        *lookup_table,
                                             gboolean                visible,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* update_preedit_text)       (IBusPanelService       *panel,
                                             IBusText              *text,
                                             guint                  cursor_pos,
                                             gboolean               visible,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* update_property)           (IBusPanelService       *panel,
                                             IBusProperty           *prop,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* cursor_down_lookup_table)  (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* cursor_up_lookup_table)    (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* destroy)                   (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* hide_auxiliary_text)       (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* hide_language_bar)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* hide_lookup_table)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* hide_preedit_text)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* page_down_lookup_table)    (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* page_up_lookup_table)      (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* reset)                     (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* show_auxiliary_text)       (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* show_language_bar)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* show_lookup_table)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* show_preedit_text)         (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* start_setup)               (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
     gboolean (* state_changed)             (IBusPanelService       *panel,
-                                            IBusError             **error);
+                                            GError                **error);
 
     /*< private >*/
     /* padding */

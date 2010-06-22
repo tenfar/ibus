@@ -73,14 +73,6 @@ static GVariant *ibus_bus_call                  (IBusBus                *bus,
 
 G_DEFINE_TYPE (IBusBus, ibus_bus, IBUS_TYPE_OBJECT)
 
-IBusBus *
-ibus_bus_new (void)
-{
-    IBusBus *bus = IBUS_BUS (g_object_new (IBUS_TYPE_BUS, NULL));
-
-    return bus;
-}
-
 static void
 ibus_bus_class_init (IBusBusClass *klass)
 {
@@ -165,9 +157,6 @@ _connection_closed_cb (GDBusConnection  *connection,
                        GError           *error,
                        IBusBus          *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
-    g_assert (G_IS_DBUS_CONNECTION (connection));
-
     if (error) {
         g_warning ("%s", error->message);
     }
@@ -354,10 +343,19 @@ ibus_bus_destroy (IBusObject *object)
     IBUS_OBJECT_CLASS (ibus_bus_parent_class)->destroy (object);
 }
 
+IBusBus *
+ibus_bus_new (void)
+{
+    IBusBus *bus = IBUS_BUS (g_object_new (IBUS_TYPE_BUS, NULL));
+
+    return bus;
+}
+
+
 gboolean
 ibus_bus_is_connected (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
 
     if (bus->priv->connection == NULL || g_dbus_connection_is_closed (bus->priv->connection))
         return FALSE;
@@ -370,9 +368,8 @@ IBusInputContext *
 ibus_bus_create_input_context (IBusBus      *bus,
                                const gchar  *client_name)
 {
-    g_assert (IBUS_IS_BUS (bus));
-    g_assert (client_name != NULL);
-
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
+    g_return_val_if_fail (client_name != NULL, NULL);
     g_return_val_if_fail (ibus_bus_is_connected (bus), NULL);
 
     gchar *path;
@@ -403,7 +400,7 @@ ibus_bus_create_input_context (IBusBus      *bus,
 gchar *
 ibus_bus_current_input_context (IBusBus      *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
     g_return_val_if_fail (ibus_bus_is_connected (bus), NULL);
 
     gchar *path = NULL;
@@ -427,8 +424,6 @@ ibus_bus_current_input_context (IBusBus      *bus)
 static void
 ibus_bus_watch_dbus_signal (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
-
     const gchar *rule;
 
     rule = "type='signal'," \
@@ -442,8 +437,6 @@ ibus_bus_watch_dbus_signal (IBusBus *bus)
 static void
 ibus_bus_unwatch_dbus_signal (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
-
     const gchar *rule;
 
     rule = "type='signal'," \
@@ -457,7 +450,7 @@ void
 ibus_bus_set_watch_dbus_signal (IBusBus        *bus,
                                 gboolean        watch)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_if_fail (IBUS_IS_BUS (bus));
 
     if (bus->priv->watch_dbus_signal == watch)
         return;
@@ -477,6 +470,7 @@ ibus_bus_set_watch_dbus_signal (IBusBus        *bus,
 const gchar *
 ibus_bus_hello (IBusBus *bus)
 {
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
     /* FIXME */
 #if 1
     if (bus->priv->connection)
@@ -512,7 +506,8 @@ ibus_bus_request_name (IBusBus      *bus,
                        const gchar  *name,
                        guint         flags)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), 0);
+    g_return_val_if_fail (name != NULL, 0);
 
     guint retval = 0;
     GVariant *result;
@@ -536,7 +531,8 @@ guint
 ibus_bus_release_name (IBusBus      *bus,
                        const gchar  *name)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), 0);
+    g_return_val_if_fail (name != NULL, 0);
 
     guint retval = 0;
     GVariant *result;
@@ -560,7 +556,8 @@ gboolean
 ibus_bus_name_has_owner (IBusBus        *bus,
                          const gchar    *name)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
+    g_return_val_if_fail (name != NULL, FALSE);
 
     gboolean retval = FALSE;
     GVariant *result;
@@ -583,6 +580,7 @@ ibus_bus_name_has_owner (IBusBus        *bus,
 GList *
 ibus_bus_list_names (IBusBus    *bus)
 {
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
     return NULL;
 }
 
@@ -590,8 +588,8 @@ void
 ibus_bus_add_match (IBusBus     *bus,
                     const gchar *rule)
 {
-    g_assert (IBUS_IS_BUS (bus));
-    g_assert (rule != NULL);
+    g_return_if_fail (IBUS_IS_BUS (bus));
+    g_return_if_fail (rule != NULL);
 
     GVariant *result;
     result = ibus_bus_call (bus,
@@ -611,8 +609,8 @@ void
 ibus_bus_remove_match (IBusBus      *bus,
                        const gchar  *rule)
 {
-    g_assert (IBUS_IS_BUS (bus));
-    g_assert (rule != NULL);
+    g_return_if_fail (IBUS_IS_BUS (bus));
+    g_return_if_fail (rule != NULL);
 
     GVariant *result;
     result = ibus_bus_call (bus,
@@ -632,7 +630,7 @@ gchar *
 ibus_bus_get_name_owner (IBusBus        *bus,
                          const gchar    *name)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
 
     gchar *retval = NULL;
     GVariant *result;
@@ -655,7 +653,7 @@ ibus_bus_get_name_owner (IBusBus        *bus,
 GDBusConnection *
 ibus_bus_get_connection (IBusBus *bus)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), NULL);
 
     return bus->priv->connection;
 }
@@ -664,7 +662,7 @@ void
 ibus_bus_exit (IBusBus *bus,
                gboolean restart)
 {
-    g_assert (IBUS_IS_BUS (bus));
+    g_return_if_fail (IBUS_IS_BUS (bus));
 
     GVariant *result;
     result = ibus_bus_call (bus,
@@ -684,24 +682,23 @@ gboolean
 ibus_bus_register_component (IBusBus       *bus,
                              IBusComponent *component)
 {
-    /* FIXME */
-    return FALSE;
-#if 0
-    g_assert (IBUS_IS_BUS (bus));
-    g_assert (IBUS_IS_COMPONENT (component));
+    g_return_val_if_fail (IBUS_IS_BUS (bus), FALSE);
+    g_return_val_if_fail (IBUS_IS_COMPONENT (component), FALSE);
 
-    gboolean result;
-
-    result = ibus_bus_call (bus,
-                            IBUS_SERVICE_IBUS,
-                            IBUS_PATH_IBUS,
-                            IBUS_INTERFACE_IBUS,
-                            "RegisterComponent",
-                            IBUS_TYPE_COMPONENT, &component,
-                            G_TYPE_INVALID);
-
-    return result;
-#endif
+    GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)component);
+    GVariant *result = ibus_bus_call (bus,
+                                      IBUS_SERVICE_IBUS,
+                                      IBUS_PATH_IBUS,
+                                      IBUS_INTERFACE_IBUS,
+                                      "RegisterComponent",
+                                      g_variant_new ("(v)", variant),
+                                      NULL);
+    gboolean retval = FALSE;
+    if (result) {
+        g_variant_get (result, "(b)", &retval);
+        g_variant_unref (result);
+    }
+    return retval;
 }
 
 static GList *

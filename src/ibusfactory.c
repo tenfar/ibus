@@ -18,7 +18,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <dbus/dbus.h>
 #include "ibusfactory.h"
 #include "ibusengine.h"
 #include "ibusshare.h"
@@ -202,10 +201,10 @@ ibus_factory_service_method_call (IBusService           *service,
 
         if (engine_type == G_TYPE_INVALID) {
             gchar *error_message = g_strdup_printf ("Can not fond engine %s", engine_name);
-            g_dbus_method_invocation_return_dbus_error (invocation,
-                                                        DBUS_ERROR_FAILED,
-                                                        error_message
-                                                        );
+            g_dbus_method_invocation_return_error (invocation,
+                                                   G_DBUS_ERROR,
+                                                   G_DBUS_ERROR_FAILED,
+                                                   error_message);
             g_free (error_message);
         }
         else {

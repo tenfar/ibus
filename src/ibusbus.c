@@ -24,13 +24,16 @@
 #include <unistd.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
-#include <dbus/dbus.h>
 #include "ibusbus.h"
 #include "ibusinternal.h"
 #include "ibusshare.h"
 #include "ibusenginedesc.h"
 #include "ibusserializable.h"
 #include "ibusconfig.h"
+
+#define DBUS_PATH_DBUS "/org/freedesktop/DBus"
+#define DBUS_SERVICE_DBUS "org.freedesktop.DBus"
+#define DBUS_INTERFACE_DBUS "org.freedesktop.DBus"
 
 #define IBUS_BUS_GET_PRIVATE(o)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((o), IBUS_TYPE_BUS, IBusBusPrivate))

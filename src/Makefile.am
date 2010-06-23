@@ -37,11 +37,9 @@ CLEANFILES =
 # C preprocessor flags
 AM_CPPFLAGS =                           \
 	-DG_LOG_DOMAIN=\"IBUS\"             \
-	@X11_CFLAGS@                        \
 	@GLIB2_CFLAGS@                      \
 	@GOBJECT2_CFLAGS@                   \
 	@GIO2_CFLAGS@                       \
-	@DBUS_CFLAGS@                       \
 	-DIBUS_DATA_DIR=\"$(pkgdatadir)\"   \
 	$(NULL)
 
@@ -49,11 +47,9 @@ AM_CPPFLAGS =                           \
 lib_LTLIBRARIES = libibus-2.0.la
 
 libibus_2_0_la_LIBADD =     \
-	@X11_LIBS@              \
 	@GLIB2_LIBS@            \
 	@GOBJECT2_LIBS@         \
 	@GIO2_LIBS@             \
-	@DBUS_LIBS@             \
 	$(NULL)
 libibus_2_0_la_LDFLAGS =            \
 	-export-symbols-regex "ibus_.*" \

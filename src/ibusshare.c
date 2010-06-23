@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <dbus/dbus.h>
 #include "ibusshare.h"
 
 static gchar *_display = NULL;
@@ -38,9 +37,17 @@ ibus_get_local_machine_id (void)
     static gchar *machine_id = NULL;
 
     if (machine_id == NULL) {
-        gchar *id = dbus_get_local_machine_id ();
-        machine_id = g_strdup (id);
-        dbus_free (id);
+        GError *error = NULL;
+        if (!g_file_get_contents ("/var/lib/dbus/machine-id",
+                                  &machine_id,
+                                  NULL,
+                                  &error)) {
+            g_warning ("Unable to load /var/lib/dbus/machine-id: %s", error->message);
+            g_error_free (error);
+        }
+        else {
+            g_strstrip (machine_id);
+        }
     }
 
     return machine_id;

@@ -24,6 +24,8 @@ NULL =
 
 SUBDIRS = . tests
 
+libibus = libibus-2.0.la
+
 # gobject introspection
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_SCANNER_ARGS =
@@ -44,7 +46,7 @@ AM_CPPFLAGS =                           \
 	$(NULL)
 
 # ibus library
-lib_LTLIBRARIES = libibus-2.0.la
+lib_LTLIBRARIES = $(libibus)
 
 libibus_2_0_la_LIBADD =     \
 	@GLIB2_LIBS@            \
@@ -156,10 +158,10 @@ introspection_files =               \
         ibusenumtypes.c             \
         ibusenumtypes.h             \
 		$(NULL)
-IBus-2.0.gir: $(ibustargetlib) Makefile
+IBus-2.0.gir: $(libibus) Makefile
 IBus_2_0_gir_SCANNERFLAGS = --strip-prefix=IBus --pkg=dbus-1,glib-2.0
 IBus_2_0_gir_INCLUDES = GLib-2.0 GObject-2.0
-IBus_2_0_gir_LIBS = $(ibustargetlib)
+IBus_2_0_gir_LIBS = $(libibus)
 IBus_2_0_gir_FILES = $(addprefix $(srcdir)/,$(introspection_files))
 IBus_2_0_gir_CFLAGS =
 INTROSPECTION_GIRS += IBus-2.0.gir

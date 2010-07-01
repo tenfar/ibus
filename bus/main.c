@@ -30,10 +30,10 @@
 #include <glib.h>
 #include <gio/gio.h>
 #include <ibus.h>
+#include "server.h"
 
 /* FIXME */
 /*
-#include "server.h"
 #include "ibusimpl.h"
 */
 gchar **g_argv = NULL;

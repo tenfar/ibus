@@ -146,13 +146,11 @@ gboolean
 bus_connection_remove_name (BusConnection     *connection,
                              const gchar       *name)
 {
-    GSList *link;
+    GSList *list = g_slist_find_custom (connection->names, name, (GCompareFunc) g_strcmp0);
 
-    link = g_slist_find_custom (connection->names, name, (GCompareFunc) g_strcmp0);
-
-    if (link) {
-        g_free (link->data);
-        connection->names = g_slist_delete_link (connection->names, link);
+    if (list) {
+        g_free (list->data);
+        connection->names = g_slist_delete_link (connection->names, list);
         return TRUE;
     }
     return FALSE;
@@ -165,23 +163,20 @@ bus_connection_add_match (BusConnection  *connection,
     g_assert (BUS_IS_CONNECTION (connection));
     g_assert (rule != NULL);
 
-    BusMatchRule *p;
-    GSList *link;
-
-    p = bus_match_rule_new (rule);
-    if (p == NULL)
+    BusMatchRule *match = bus_match_rule_new (rule);
+    if (match == NULL)
         return FALSE;
 
-    for (link = connection->rules; link != NULL; link = link->next) {
-        if (bus_match_rule_is_equal (p, (BusMatchRule *)link->data)) {
-            g_object_unref (p);
+    GSList *list;
+    for (list = connection->rules; list != NULL; list = list->next) {
+        if (bus_match_rule_is_equal (match, (BusMatchRule *)list->data)) {
+            g_object_unref (match);
             return TRUE;
         }
     }
 
-    connection->rules = g_slist_append (connection->rules, p);
+    connection->rules = g_slist_append (connection->rules, match);
     return TRUE;
-
 }
 
 gboolean
@@ -190,4 +185,3 @@ bus_connection_remove_match (BusConnection  *connection,
 {
     return FALSE;
 }
-

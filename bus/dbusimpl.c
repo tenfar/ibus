@@ -25,8 +25,6 @@
 #include "matchrule.h"
 
 enum {
-    NAME_ACQUIRED,
-    NAME_LOST,
     NAME_OWNER_CHANGED,
     LAST_SIGNAL,
 };
@@ -78,20 +76,6 @@ static void     _rule_destroy_cb                (BusMatchRule       *rule,
                                                  BusDBusImpl        *dbus);
 
 G_DEFINE_TYPE(BusDBusImpl, bus_dbus_impl, IBUS_TYPE_SERVICE)
-
-BusDBusImpl *
-bus_dbus_impl_get_default (void)
-{
-    static BusDBusImpl *dbus = NULL;
-
-    if (dbus == NULL) {
-        dbus = (BusDBusImpl *) g_object_new (BUS_TYPE_DBUS_IMPL,
-                                             "object-path", "org.freedesktop.DBus",
-                                             NULL);
-    }
-
-    return dbus;
-}
 
 static void
 bus_dbus_impl_class_init (BusDBusImplClass *klass)
@@ -967,6 +951,20 @@ _connection_ibus_message_sent_cb (BusConnection  *connection,
 }
 #endif
 
+BusDBusImpl *
+bus_dbus_impl_get_default (void)
+{
+    static BusDBusImpl *dbus = NULL;
+
+    if (dbus == NULL) {
+        dbus = (BusDBusImpl *) g_object_new (BUS_TYPE_DBUS_IMPL,
+                                             "object-path", "/org/freedesktop/DBus",
+                                             NULL);
+    }
+
+    return dbus;
+}
+
 static void
 bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
                                      BusDBusImpl   *dbus)
@@ -1013,7 +1011,7 @@ bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
                               BusConnection *connection)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
-    g_assert (G_IS_DBUS_CONNECTION (connection));
+    g_assert (BUS_IS_CONNECTION (connection));
     g_assert (g_slist_find (dbus->connections, connection) == NULL);
 
     g_object_ref_sink (connection);
@@ -1155,6 +1153,7 @@ _object_destroy_cb (IBusService *object,
 {
     bus_dbus_impl_unregister_object (dbus, object);
 }
+
 
 gboolean
 bus_dbus_impl_register_object (BusDBusImpl *dbus,

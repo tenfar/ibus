@@ -101,8 +101,10 @@ struct _IBusServiceClass {
                                      GVariant           *value,
                                      GError            **error);
     /*< private >*/
+    GDBusInterfaceInfo *interface_info;
+
     /* padding */
-    gpointer pdummy[5];
+    gpointer pdummy[4];
 };
 
 

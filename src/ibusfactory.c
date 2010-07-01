@@ -85,6 +85,17 @@ static void      ibus_factory_engine_destroy_cb
 
 G_DEFINE_TYPE (IBusFactory, ibus_factory, IBUS_TYPE_SERVICE)
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus.EngineFactory'>"
+    "    <method name='CreateEngine'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='out' type='o' />"
+    "    </method>"
+    "    <method name='Destroy' />"
+    "  </interface>"
+    "</node>";
+
 static void
 ibus_factory_class_init (IBusFactoryClass *klass)
 {
@@ -101,6 +112,11 @@ ibus_factory_class_init (IBusFactoryClass *klass)
     IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_factory_service_method_call;
     IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_factory_service_get_property;
     IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_factory_service_set_property;
+
+    GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+    g_assert (introspection_data != NULL);
+    IBUS_SERVICE_CLASS (klass)->interface_info = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
+    g_dbus_node_info_unref (introspection_data);
 }
 
 static void

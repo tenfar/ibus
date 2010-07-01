@@ -137,6 +137,76 @@ static void      ibus_engine_property_hide   (IBusEngine         *engine,
 
 G_DEFINE_TYPE (IBusEngine, ibus_engine, IBUS_TYPE_SERVICE)
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus.Engine'>"
+    /* FIXME methods */
+    "    <method name='ProcessKeyEvent'>"
+    "      <arg direction='in'  type='u' name='keyval' />"
+    "      <arg direction='in'  type='u' name='keycode' />"
+    "      <arg direction='in'  type='u' name='state' />"
+    "      <arg direction='out' type='b' />"
+    "    </method>"
+    "    <method name='SetCursorLocation'>"
+    "      <arg direction='in'  type='i' name='x' />"
+    "      <arg direction='in'  type='i' name='y' />"
+    "      <arg direction='in'  type='i' name='w' />"
+    "      <arg direction='in'  type='i' name='h' />"
+    "    </method>"
+    "    <method name='SetCapabilities'>"
+    "      <arg direction='in'  type='u' name='caps' />"
+    "    </method>"
+    "    <method name='PropertyActivate'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='in'  type='i' name='state' />"
+    "    </method>"
+    "    <method name='PropertyShow'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "    </method>"
+    "    <method name='PropertyHide'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "    </method>"
+    "    <method name='FocusIn' />"
+    "    <method name='FocusOut' />"
+    "    <method name='Reset' />"
+    "    <method name='Enable' />"
+    "    <method name='Disable' />"
+    "    <method name='PageUp' />"
+    "    <method name='PageDown' />"
+    "    <method name='CursorUp' />"
+    "    <method name='CursorDown' />"
+    /* FIXME signals */
+    "    <signal name='CommitText'>"
+    "      <arg type='v' name='text' />"
+    "    </signal>"
+    "    <signal name='UpdatePreeditText'>"
+    "      <arg type='v' name='text' />"
+    "      <arg type='u' name='cursor_pos' />"
+    "      <arg type='b' name='visible' />"
+    "      <arg type='u' name='mode' />"
+    "    </signal>"
+    "    <signal name='UpdateAuxiliaryText'>"
+    "      <arg type='v' name='text' />"
+    "      <arg type='b' name='visible' />"
+    "    </signal>"
+    "    <signal name='UpdateLookupTable'>"
+    "      <arg type='v' name='table' />"
+    "      <arg type='b' name='visible' />"
+    "    </signal>"
+    "    <signal name='RegisterProperties'>"
+    "      <arg type='v' name='props' />"
+    "    </signal>"
+    "    <signal name='UpdateProperty'>"
+    "      <arg type='v' name='prop' />"
+    "    </signal>"
+    "    <signal name='ForwardKeyEvent'>"
+    "      <arg type='u' name='keyval' />"
+    "      <arg type='u' name='keycode' />"
+    "      <arg type='u' name='state' />"
+    "    </signal>"
+    "  </interface>"
+    "</node>";
+
 static void
 ibus_engine_class_init (IBusEngineClass *klass)
 {
@@ -151,6 +221,11 @@ ibus_engine_class_init (IBusEngineClass *klass)
     IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_engine_service_method_call;
     IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_engine_service_get_property;
     IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_engine_service_set_property;
+
+    GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
+    g_assert (introspection_data != NULL);
+    IBUS_SERVICE_CLASS (klass)->interface_info = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
+    g_dbus_node_info_unref (introspection_data);
 
     klass->process_key_event = ibus_engine_process_key_event;
     klass->focus_in     = ibus_engine_focus_in;
@@ -168,7 +243,6 @@ ibus_engine_class_init (IBusEngineClass *klass)
     klass->property_hide        = ibus_engine_property_hide;
     klass->set_cursor_location  = ibus_engine_set_cursor_location;
     klass->set_capabilities     = ibus_engine_set_capabilities;
-
 
     /* install properties */
     /**

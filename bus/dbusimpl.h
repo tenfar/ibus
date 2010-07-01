@@ -21,8 +21,8 @@
 #ifndef __DBUS_IMPL_H_
 #define __DBUS_IMPL_H_
 
+#include <gio/gio.h>
 #include <ibus.h>
-#include "connection.h"
 
 /*
  * Type macros.
@@ -56,8 +56,8 @@ struct _BusDBusImpl {
     GHashTable *unique_names;
     GHashTable *names;
     GHashTable *objects;
-    GList *connections;
-    GList *rules;
+    GSList *connections;
+    GSList *rules;
     gint id;
 };
 
@@ -73,8 +73,10 @@ struct _BusDBusImplClass {
 
 GType            bus_dbus_impl_get_type         (void);
 BusDBusImpl     *bus_dbus_impl_get_default      (void);
-gboolean         bus_dbus_impl_new_connection   (BusDBusImpl    *dbus,
-                                                 BusConnection  *connection);
+gboolean         bus_dbus_impl_new_connection   (BusDBusImpl     *dbus,
+                                                 GDBusConnection *connection);
+#if 0
+/* FIXME */
 BusConnection   *bus_dbus_impl_get_connection_by_name
                                                 (BusDBusImpl    *dbus,
                                                  const gchar    *name);
@@ -88,7 +90,7 @@ gboolean         bus_dbus_impl_register_object  (BusDBusImpl    *dbus,
                                                  IBusService    *object);
 gboolean         bus_dbus_impl_unregister_object(BusDBusImpl    *dbus,
                                                  IBusService    *object);
-
+#endif
 G_END_DECLS
 #endif
 

@@ -18,13 +18,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
-#include <string.h>
-#include <dbus/dbus.h>
-#include <ibusinternal.h>
-#include <ibusmarshalers.h>
 #include "dbusimpl.h"
-#include "connection.h"
+#include <string.h>
+#include <ibusinternal.h>
+#include "marshalers.h"
 #include "matchrule.h"
 
 enum {
@@ -42,16 +39,41 @@ static guint dbus_signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */
 static void     bus_dbus_impl_destroy           (BusDBusImpl        *dbus);
-static gboolean bus_dbus_impl_ibus_message      (BusDBusImpl        *dbus,
-                                                 BusConnection      *connection,
-                                                 IBusMessage        *message);
+static void     bus_dbus_impl_service_method_call
+                                                (IBusService        *service,
+                                                 GDBusConnection    *connection,
+                                                 const gchar        *sender,
+                                                 const gchar        *object_path,
+                                                 const gchar        *interface_name,
+                                                 const gchar        *method_name,
+                                                 GVariant           *parameters,
+                                                 GDBusMethodInvocation
+                                                                    *invocation);
+static GVariant *bus_dbus_impl_service_get_property
+                                                (IBusService        *service,
+                                                 GDBusConnection    *connection,
+                                                 const gchar        *sender,
+                                                 const gchar        *object_path,
+                                                 const gchar        *interface_name,
+                                                 const gchar        *property_name,
+                                                 GError            **error);
+static gboolean  bus_dbus_impl_service_set_property
+                                                (IBusService        *service,
+                                                 GDBusConnection    *connection,
+                                                 const gchar        *sender,
+                                                 const gchar        *object_path,
+                                                 const gchar        *interface_name,
+                                                 const gchar        *property_name,
+                                                 GVariant           *value,
+                                                 GError            **error);
 static void     bus_dbus_impl_name_owner_changed(BusDBusImpl        *dbus,
                                                  gchar              *name,
                                                  gchar              *old_name,
                                                  gchar              *new_name);
-
-
-static void     _connection_destroy_cb          (BusConnection      *connection,
+static void     bus_dbus_impl_connection_closed_cb
+                                                (GDBusConnection    *connection,
+                                                 gboolean            remote_peer_vanished,
+                                                 GError             *error,
                                                  BusDBusImpl        *dbus);
 static void     _rule_destroy_cb                (BusMatchRule       *rule,
                                                  BusDBusImpl        *dbus);
@@ -65,7 +87,7 @@ bus_dbus_impl_get_default (void)
 
     if (dbus == NULL) {
         dbus = (BusDBusImpl *) g_object_new (BUS_TYPE_DBUS_IMPL,
-                                             "path", DBUS_PATH_DBUS,
+                                             "object-path", "org.freedesktop.DBus",
                                              NULL);
     }
 
@@ -76,11 +98,12 @@ static void
 bus_dbus_impl_class_init (BusDBusImplClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    IBusServiceClass *service_class = IBUS_SERVICE_CLASS (klass);
 
     IBUS_OBJECT_CLASS (gobject_class)->destroy = (IBusObjectDestroyFunc) bus_dbus_impl_destroy;
 
-    service_class->ibus_message = (ServiceIBusMessageFunc) bus_dbus_impl_ibus_message;
+    IBUS_SERVICE_CLASS (klass)->service_method_call =  bus_dbus_impl_service_method_call;
+    IBUS_SERVICE_CLASS (klass)->service_get_property = bus_dbus_impl_service_get_property;
+    IBUS_SERVICE_CLASS (klass)->service_set_property = bus_dbus_impl_service_set_property;
 
     klass->name_owner_changed = bus_dbus_impl_name_owner_changed;
 
@@ -91,13 +114,12 @@ bus_dbus_impl_class_init (BusDBusImplClass *klass)
             G_SIGNAL_RUN_FIRST,
             G_STRUCT_OFFSET (BusDBusImplClass, name_owner_changed),
             NULL, NULL,
-            ibus_marshal_VOID__STRING_STRING_STRING,
+            bus_marshal_VOID__STRING_STRING_STRING,
             G_TYPE_NONE,
             3,
             G_TYPE_STRING,
             G_TYPE_STRING,
             G_TYPE_STRING);
-
 }
 
 static void
@@ -111,13 +133,13 @@ bus_dbus_impl_init (BusDBusImpl *dbus)
     dbus->id = 1;
 
     g_object_ref (dbus);
-    g_hash_table_insert (dbus->objects, DBUS_PATH_DBUS, dbus);
+    g_hash_table_insert (dbus->objects, "/org/freedesktop/DBus", dbus);
 }
 
 static void
 bus_dbus_impl_destroy (BusDBusImpl *dbus)
 {
-    GList *p;
+    GSList *p;
 
     for (p = dbus->rules; p != NULL; p = p->next) {
         BusMatchRule *rule = BUS_MATCH_RULE (p->data);
@@ -125,17 +147,16 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
         ibus_object_destroy ((IBusObject *) rule);
         g_object_unref (rule);
     }
-    g_list_free (dbus->rules);
+    g_slist_free (dbus->rules);
     dbus->rules = NULL;
 
     for (p = dbus->connections; p != NULL; p = p->next) {
-        BusConnection *connection = BUS_CONNECTION (p->data);
-        g_signal_handlers_disconnect_by_func (connection, _connection_destroy_cb, dbus);
-        ibus_connection_close ((IBusConnection *) connection);
-        ibus_object_destroy ((IBusObject *) connection);
+        GDBusConnection *connection = G_DBUS_CONNECTION (p->data);
+        g_signal_handlers_disconnect_by_func (connection, bus_dbus_impl_connection_closed_cb, dbus);
+        g_dbus_connection_close (connection);
         g_object_unref (connection);
     }
-    g_list_free (dbus->connections);
+    g_slist_free (dbus->connections);
     dbus->connections = NULL;
 
     g_hash_table_remove_all (dbus->unique_names);
@@ -146,10 +167,11 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
     dbus->names = NULL;
     dbus->objects = NULL;
 
-    G_OBJECT_CLASS(bus_dbus_impl_parent_class)->dispose (G_OBJECT (dbus));
+    IBUS_OBJECT_CLASS(bus_dbus_impl_parent_class)->destroy ((IBusObject *)dbus);
 }
 
-
+/* FIXME */
+#if 0
 /* introspectable interface */
 static IBusMessage *
 _dbus_introspect (BusDBusImpl     *dbus,
@@ -479,7 +501,7 @@ _dbus_get_id (BusDBusImpl   *dbus,
                               G_TYPE_INVALID);
     return reply_message;
 }
-
+#endif
 static void
 _rule_destroy_cb (BusMatchRule *rule,
                   BusDBusImpl  *dbus)
@@ -487,10 +509,11 @@ _rule_destroy_cb (BusMatchRule *rule,
     g_assert (BUS_IS_MATCH_RULE (rule));
     g_assert (BUS_IS_DBUS_IMPL (dbus));
 
-    dbus->rules = g_list_remove (dbus->rules, rule);
+    dbus->rules = g_slist_remove (dbus->rules, rule);
     g_object_unref (rule);
 }
 
+#if 0
 static IBusMessage *
 _dbus_add_match (BusDBusImpl    *dbus,
                  IBusMessage    *message,
@@ -754,6 +777,7 @@ bus_dbus_impl_ibus_message (BusDBusImpl  *dbus,
                                 (IBusConnection *) connection,
                                 message);
 }
+#endif
 
 static void
 bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
@@ -765,7 +789,8 @@ bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
     g_assert (name != NULL);
     g_assert (old_name != NULL);
     g_assert (new_name != NULL);
-
+    /* FIXME */
+#if 0
     IBusMessage *message;
 
     message = ibus_message_new_signal (DBUS_PATH_DBUS,
@@ -781,28 +806,25 @@ bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
     bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
 
     ibus_message_unref (message);
-
+#endif
 }
 
-static gboolean
-_connection_ibus_message_cb (BusConnection  *connection,
-                             IBusMessage    *message,
-                             BusDBusImpl    *dbus)
+static void
+bus_dbus_impl_service_method_call (IBusService           *service,
+                                   GDBusConnection       *connection,
+                                   const gchar           *sender,
+                                   const gchar           *object_path,
+                                   const gchar           *interface_name,
+                                   const gchar           *method_name,
+                                   GVariant              *parameters,
+                                   GDBusMethodInvocation *invocation)
 {
-    g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (message != NULL);
-    g_assert (BUS_IS_DBUS_IMPL (dbus));
 
+    /* FIXME */
+#if 0
     const gchar *dest;
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
-        return FALSE;
-    }
-
-    if (ibus_message_is_signal (message,
-                                DBUS_INTERFACE_LOCAL,
-                                "Disconnected")) {
-        /* ignore signal from local interface */
         return FALSE;
     }
 
@@ -890,8 +912,53 @@ _connection_ibus_message_cb (BusConnection  *connection,
 
     g_signal_stop_emission_by_name (connection, "ibus-message");
     return TRUE;
+#endif
 }
 
+
+static GVariant *
+bus_dbus_impl_service_get_property (IBusService        *service,
+                                    GDBusConnection    *connection,
+                                    const gchar        *sender,
+                                    const gchar        *object_path,
+                                    const gchar        *interface_name,
+                                    const gchar        *property_name,
+                                    GError            **error)
+{
+    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
+                service_get_property (service,
+                                      connection,
+                                      sender,
+                                      object_path,
+                                      interface_name,
+                                      property_name,
+                                      error);
+}
+
+static gboolean
+bus_dbus_impl_service_set_property (IBusService        *service,
+                                    GDBusConnection    *connection,
+                                    const gchar        *sender,
+                                    const gchar        *object_path,
+                                    const gchar        *interface_name,
+                                    const gchar        *property_name,
+                                    GVariant           *value,
+                                    GError            **error)
+{
+    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
+                service_set_property (service,
+                                      connection,
+                                      sender,
+                                      object_path,
+                                      interface_name,
+                                      property_name,
+                                      value,
+                                      error);
+
+}
+
+/* FIXME */
+#if 0
 static void
 _connection_ibus_message_sent_cb (BusConnection  *connection,
                                   IBusMessage    *message,
@@ -899,14 +966,16 @@ _connection_ibus_message_sent_cb (BusConnection  *connection,
 {
     bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
 }
+#endif
 
 static void
-_connection_destroy_cb (BusConnection   *connection,
-                        BusDBusImpl     *dbus)
+bus_dbus_impl_connection_closed_cb (GDBusConnection *connection,
+                                    gboolean         remote_peer_vanished,
+                                    GError          *error,
+                                    BusDBusImpl     *dbus)
 {
-    g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (BUS_IS_DBUS_IMPL (dbus));
-
+    /* FIXME */
+#if 0
     /*
     ibus_service_remove_from_connection (
                     IBUS_SERVICE (dbus),
@@ -939,21 +1008,23 @@ _connection_destroy_cb (BusConnection   *connection,
 
     dbus->connections = g_list_remove (dbus->connections, connection);
     g_object_unref (connection);
+#endif
 }
 
 
 gboolean
-bus_dbus_impl_new_connection (BusDBusImpl    *dbus,
-                              BusConnection  *connection)
+bus_dbus_impl_new_connection (BusDBusImpl     *dbus,
+                              GDBusConnection *connection)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
-    g_assert (BUS_IS_CONNECTION (connection));
-
-    g_assert (g_list_find (dbus->connections, connection) == NULL);
+    g_assert (G_IS_DBUS_CONNECTION (connection));
+    g_assert (g_slist_find (dbus->connections, connection) == NULL);
 
     g_object_ref_sink (connection);
-    dbus->connections = g_list_append (dbus->connections, connection);
+    dbus->connections = g_slist_append (dbus->connections, connection);
 
+    /* FIXME */
+#if 0
     g_signal_connect (connection,
                       "ibus-message",
                       G_CALLBACK (_connection_ibus_message_cb),
@@ -969,26 +1040,27 @@ bus_dbus_impl_new_connection (BusDBusImpl    *dbus,
                       "destroy",
                       G_CALLBACK (_connection_destroy_cb),
                       dbus);
+#endif
     return TRUE;
 }
 
 
-BusConnection *
+GDBusConnection *
 bus_dbus_impl_get_connection_by_name (BusDBusImpl    *dbus,
                                       const gchar    *name)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (name != NULL);
 
-    BusConnection *connection = NULL;
+    GDBusConnection *connection = NULL;
 
     if (name[0] == ':') {
-        connection = BUS_CONNECTION (g_hash_table_lookup (
+        connection = G_DBUS_CONNECTION (g_hash_table_lookup (
                                         dbus->unique_names,
                                         name));
     }
     else {
-        connection = BUS_CONNECTION (g_hash_table_lookup (
+        connection = G_DBUS_CONNECTION (g_hash_table_lookup (
                                         dbus->names,
                                         name));
     }
@@ -999,8 +1071,10 @@ bus_dbus_impl_get_connection_by_name (BusDBusImpl    *dbus,
 
 void
 bus_dbus_impl_dispatch_message (BusDBusImpl  *dbus,
-                                IBusMessage  *message)
+                                GDBusMessage *message)
 {
+    /* FIXME */
+#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (message != NULL);
 
@@ -1031,13 +1105,16 @@ bus_dbus_impl_dispatch_message (BusDBusImpl  *dbus,
     }
 
     bus_dbus_impl_dispatch_message_by_rule (dbus, message, dest_connection);
+#endif
 }
 
 void
 bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
-                                        IBusMessage     *message,
-                                        BusConnection   *skip_connection)
+                                        GDBusMessage    *message,
+                                        GDBusConnection *skip_connection)
 {
+    /* FIXME */
+#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (message != NULL);
     g_assert (BUS_IS_CONNECTION (skip_connection) || skip_connection == NULL);
@@ -1074,6 +1151,7 @@ bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
         }
     }
     g_list_free (recipients);
+#endif
 }
 
 
@@ -1088,6 +1166,8 @@ gboolean
 bus_dbus_impl_register_object (BusDBusImpl *dbus,
                                IBusService *object)
 {
+    /* FIXME */
+#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (IBUS_IS_SERVICE (object));
 
@@ -1107,7 +1187,7 @@ bus_dbus_impl_register_object (BusDBusImpl *dbus,
     g_hash_table_insert (dbus->objects, (gpointer)path, object);
 
     g_signal_connect (object, "destroy", G_CALLBACK (_object_destroy_cb), dbus);
-
+#endif
     return TRUE;
 }
 
@@ -1115,6 +1195,8 @@ gboolean
 bus_dbus_impl_unregister_object (BusDBusImpl *dbus,
                                  IBusService *object)
 {
+    /* FIXME */
+#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (IBUS_IS_SERVICE (object));
 
@@ -1133,7 +1215,7 @@ bus_dbus_impl_unregister_object (BusDBusImpl *dbus,
 
     g_hash_table_remove (dbus->objects, path);
     g_object_unref (object);
-
+#endif
     return TRUE;
 }
 

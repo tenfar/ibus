@@ -18,140 +18,50 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <stdlib.h>
-
 #include "server.h"
-#include "connection.h"
+#include <gio/gio.h>
 #include "dbusimpl.h"
-#include "ibusimpl.h"
-
-/* functions prototype */
-static void      bus_server_destroy     (BusServer          *server);
-static void      bus_server_new_connection
-                                        (BusServer          *server,
-                                         BusConnection      *connection);
-
-G_DEFINE_TYPE (BusServer, bus_server, IBUS_TYPE_SERVER)
 
 static void
-bus_server_class_init (BusServerClass *klass)
+bus_new_connection_cb (GDBusServer     *server,
+                       GDBusConnection *connection,
+                       gpointer         user_data)
 {
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
-
-    ibus_object_class->destroy = (IBusObjectDestroyFunc) bus_server_destroy;
-
-    IBUS_SERVER_CLASS (klass)->new_connection =
-            (IBusNewConnectionFunc) bus_server_new_connection;
-}
-
-BusServer *
-bus_server_get_default (void)
-{
-    static BusServer *server = NULL;
-
-    if (server == NULL) {
-        server = (BusServer *) g_object_new (BUS_TYPE_SERVER,
-                                             "connection-type", BUS_TYPE_CONNECTION,
-                                             NULL);
-        bus_dbus_impl_get_default ();
-        bus_ibus_impl_get_default ();
-    }
-    return server;
-}
-
-gboolean
-bus_server_listen (BusServer *server)
-{
-    g_assert (BUS_IS_SERVER (server));
-
-    const gchar *mechanisms[] = {
-        "EXTERNAL",
-        NULL
-    };
-
-    const gchar *address = "unix:tmpdir=/tmp/";
-    gboolean retval;
-
-#if 0
-    path = ibus_get_socket_folder ();
-    mkdir (path, 0700);
-    chmod (path, 0700);
-
-    address = ibus_get_address ();
-#endif
-
-    retval = ibus_server_listen (IBUS_SERVER (server), address);
-
-#if 0
-    chmod (ibus_get_socket_path (), 0600);
-#endif
-
-    ibus_server_set_auth_mechanisms ((IBusServer *)server, mechanisms);
-
-    if (!retval) {
-#if 0
-        g_printerr ("Can not listen on %s! Please try remove directory %s and run again.", address, path);
-#else
-        g_printerr ("Can not listen on %s!", address);
-#endif
-        exit (-1);
-    }
-
-    ibus_write_address (ibus_server_get_address (IBUS_SERVER (server)));
-
-    return retval;
-}
-
-void
-bus_server_run (BusServer *server)
-{
-    g_assert (BUS_IS_SERVER (server));
-
-    g_main_loop_run (server->loop);
-}
-
-void
-bus_server_quit (BusServer *server)
-{
-    g_assert (BUS_IS_SERVER (server));
-
-    g_main_loop_quit (server->loop);
-}
-
-static void
-bus_server_init (BusServer *server)
-{
-    server->loop = g_main_loop_new (NULL, FALSE);
-    server->dbus = bus_dbus_impl_get_default ();
-    server->ibus = bus_ibus_impl_get_default ();
-}
-
-static void
-bus_server_new_connection (BusServer     *server,
-                           BusConnection *connection)
-{
-    g_assert (BUS_IS_SERVER (server));
-    bus_dbus_impl_new_connection (server->dbus, connection);
     g_debug ("new connection");
 }
 
-static void
-bus_server_destroy (BusServer *server)
+void
+bus_server_start (void)
 {
-    g_assert (BUS_IS_SERVER (server));
+    GDBusServerFlags flags = G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS;
+    gchar *guid = g_dbus_generate_guid ();
+    GDBusServer *server =  g_dbus_server_new_sync ("unix:tmpdir=/tmp",
+				        flags, guid, NULL, NULL, NULL);
+    g_free (guid);
 
-    ibus_object_destroy ((IBusObject *) server->dbus);
-    g_object_unref (server->dbus);
-    ibus_object_destroy ((IBusObject *) server->ibus);
-    g_object_unref (server->ibus);
+    g_signal_connect (server, "new-connection", G_CALLBACK (bus_new_connection_cb), NULL);
 
-    while (g_main_loop_is_running (server->loop)) {
-        g_main_loop_quit (server->loop);
-    }
-    g_main_loop_unref (server->loop);
+    g_dbus_server_start (server);
 
-    IBUS_OBJECT_CLASS (bus_server_parent_class)->destroy (IBUS_OBJECT (server));
+    gchar *address = g_strdup_printf ("%s,guid=%s",
+                            g_dbus_server_get_client_address (server),
+                            g_dbus_server_get_guid (server));
+
+    /* write address to file */
+    g_debug ("address = %s", address);
+
+    /* FIXME */
+#if 0
+    ibus_write_address (address);
+#endif
+
+    g_free (address);
+
+    /* create main loop */
+    GMainLoop *mainloop = g_main_loop_new (NULL, FALSE);
+    g_main_loop_run (mainloop);
+
+    /* release resources */
+    g_main_loop_unref (mainloop);
+    g_object_unref (server);
 }

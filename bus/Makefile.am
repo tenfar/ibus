@@ -20,6 +20,8 @@
 # Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307  USA
 
+NULL =
+
 libibus = $(top_builddir)/src/libibus-2.0.la
 
 INCLUDES = \
@@ -30,7 +32,6 @@ INCLUDES = \
 AM_CFLAGS = \
 	@GLIB2_CFLAGS@ \
 	@GTHREAD2_CFLAGS@ \
-	@DBUS_CFLAGS@ \
 	-DG_LOG_DOMAIN=\"IBUS\" \
 	-DPKGDATADIR=\"$(pkgdatadir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -41,13 +42,12 @@ AM_LDADD = \
 	@GOBJECT2_LIBS@ \
 	@GLIB2_LIBS@ \
 	@GTHREAD2_LIBS@ \
-	@DBUS_LIBS@ \
 	$(libibus) \
 	$(NULL)
 
-TESTS = \
-	test-matchrule \
-	$(NULL)
+# TESTS = \
+# 	test-matchrule \
+# 	$(NULL)
 xdgautostart_DATA = \
 	ibus.desktop \
 	$(NULL)
@@ -87,6 +87,13 @@ ibus_daemon_SOURCES = \
 	registry.h \
 	option.h \
 	$(NULL)
+ibus_daemon_SOURCES = \
+	main.c \
+	server.c \
+	dbusimpl.c \
+	matchrule.c \
+	marshalers.c \
+	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(NULL)
@@ -113,6 +120,16 @@ test_matchrule_CFLAGS = \
 test_matchrule_LDADD = \
 	$(AM_LDADD) \
 	$(NULL)
+
+# gen marshal
+marshalers.h: marshalers.list
+	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=bus_marshal $(srcdir)/marshalers.list --header --internal > $@.tmp && \
+	mv $@.tmp $@
+
+marshalers.c: marshalers.h marshalers.list
+	$(AM_V_GEN) (echo "#include \"marshalers.h\""; \
+	$(GLIB_GENMARSHAL) --prefix=bus_marshal $(srcdir)/marshalers.list --body --internal) > $@.tmp && \
+	mv $@.tmp $@
 
 EXTRA_DIST = \
 	$(desktop_in_files) \

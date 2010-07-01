@@ -27,9 +27,15 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <signal.h>
+#include <glib.h>
+#include <gio/gio.h>
+#include <ibus.h>
+
+/* FIXME */
+/*
 #include "server.h"
 #include "ibusimpl.h"
-
+*/
 gchar **g_argv = NULL;
 
 static gboolean daemonize = FALSE;
@@ -174,21 +180,16 @@ _sig_usr2_handler (int sig)
 gint
 main (gint argc, gchar **argv)
 {
-    GOptionContext *context;
-    BusServer *server;
-    IBusBus *bus;
-
-    GError *error = NULL;
-
     setlocale (LC_ALL, "");
 
-    context = g_option_context_new ("- ibus daemon");
-
+    GOptionContext *context = g_option_context_new ("- ibus daemon");
     g_option_context_add_main_entries (context, entries, "ibus-daemon");
 
     g_argv = g_strdupv (argv);
+    GError *error = NULL;
     if (!g_option_context_parse (context, &argc, &argv, &error)) {
         g_printerr ("Option parsing failed: %s\n", error->message);
+	g_error_free (error);
         exit (-1);
     }
 
@@ -231,8 +232,9 @@ main (gint argc, gchar **argv)
         NULL);
 
     /* check if ibus-daemon is running in this session */
+#if 0
     if (ibus_get_address () != NULL) {
-        bus = ibus_bus_new ();
+        IBusBus *bus = ibus_bus_new ();
 
         if (ibus_bus_is_connected (bus)) {
             if (!replace) {
@@ -247,11 +249,10 @@ main (gint argc, gchar **argv)
         g_object_unref (bus);
         bus = NULL;
     }
-
-    /* create ibus server */
-    server = bus_server_get_default ();
-    bus_server_listen (server);
-
+#endif
+    bus_server_start ();
+#if 0
+    /* FIXME */
     if (!single) {
         /* execute config component */
         if (g_strcmp0 (config, "default") == 0) {
@@ -293,6 +294,5 @@ main (gint argc, gchar **argv)
     }
 
     bus_server_run (server);
-
-    return 0;
+#endif
 }

@@ -202,7 +202,6 @@ ibusmarshalers.c: ibusmarshalers.h ibusmarshalers.list
 
 EXTRA_DIST =                    \
 	ibusversion.h.in            \
-	ibusmarshalers.h            \
 	ibusmarshalers.list         \
 	ibusenumtypes.h.template    \
 	ibusenumtypes.c.template    \

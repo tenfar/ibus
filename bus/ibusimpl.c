@@ -49,10 +49,34 @@ enum {
 // static guint            _signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */
-static void     bus_ibus_impl_destroy           (BusIBusImpl        *ibus);
-static gboolean bus_ibus_impl_ibus_message      (BusIBusImpl        *ibus,
-                                                 BusConnection      *connection,
-                                                 IBusMessage        *message);
+static void      bus_ibus_impl_destroy           (BusIBusImpl        *ibus);
+static void      ibus_engine_service_method_call
+                                              (IBusService        *service,
+                                               GDBusConnection    *connection,
+                                               const gchar        *sender,
+                                               const gchar        *object_path,
+                                               const gchar        *interface_name,
+                                               const gchar        *method_name,
+                                               GVariant           *parameters,
+                                               GDBusMethodInvocation
+                                                                  *invocation);
+static GVariant *ibus_engine_service_get_property
+                                             (IBusService        *service,
+                                              GDBusConnection    *connection,
+                                              const gchar        *sender,
+                                              const gchar        *object_path,
+                                              const gchar        *interface_name,
+                                              const gchar        *property_name,
+                                              GError            **error);
+static gboolean  ibus_engine_service_set_property
+                                             (IBusService        *service,
+                                              GDBusConnection    *connection,
+                                              const gchar        *sender,
+                                              const gchar        *object_path,
+                                              const gchar        *interface_name,
+                                              const gchar        *property_name,
+                                              GVariant           *value,
+                                              GError            **error);
 static void     bus_ibus_impl_add_factory       (BusIBusImpl        *ibus,
                                                  BusFactoryProxy    *factory);
 static void     bus_ibus_impl_set_trigger       (BusIBusImpl        *ibus,

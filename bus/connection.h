@@ -47,7 +47,7 @@ typedef struct _BusConnection BusConnection;
 typedef struct _BusConnectionClass BusConnectionClass;
 
 struct _BusConnection {
-    IBusConnection parent;
+    IBusObject parent;
 
     /* instance members */
     gchar *unique_name;
@@ -57,7 +57,7 @@ struct _BusConnection {
 };
 
 struct _BusConnectionClass {
-  IBusConnectionClass parent;
+  IBusObjectClass parent;
 
   /* class members */
 };

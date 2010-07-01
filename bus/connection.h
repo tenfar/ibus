@@ -50,10 +50,11 @@ struct _BusConnection {
     IBusObject parent;
 
     /* instance members */
+    GDBusConnection *connection;
     gchar *unique_name;
     /* list for well known names */
-    GList  *names;
-    GList  *rules;
+    GSList  *names;
+    GSList  *rules;
 };
 
 struct _BusConnectionClass {
@@ -63,15 +64,15 @@ struct _BusConnectionClass {
 };
 
 GType            bus_connection_get_type            (void);
-BusConnection   *bus_connection_new                 (void);
-const gchar     *bus_connection_get_unique_name     (BusConnection  *connection);
-void             bus_connection_set_unique_name     (BusConnection  *connection,
-                                                     const gchar    *name);
-const GList     *bus_connection_get_names           (BusConnection  *connection);
-const gchar     *bus_connection_add_name            (BusConnection  *connection,
-                                                     const gchar    *name);
-gboolean         bus_connection_remove_name         (BusConnection  *connection,
-                                                     const gchar    *name);
+BusConnection   *bus_connection_new                 (GDBusConnection    *connection);
+const gchar     *bus_connection_get_unique_name     (BusConnection      *connection);
+void             bus_connection_set_unique_name     (BusConnection      *connection,
+                                                     const gchar        *name);
+const GSList     *bus_connection_get_names          (BusConnection      *connection);
+const gchar     *bus_connection_add_name            (BusConnection      *connection,
+                                                     const gchar        *name);
+gboolean         bus_connection_remove_name         (BusConnection      *connection,
+                                                     const gchar        *name);
 G_END_DECLS
 #endif
 

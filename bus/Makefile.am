@@ -93,6 +93,7 @@ ibus_daemon_SOURCES = \
 	dbusimpl.c \
 	matchrule.c \
 	marshalers.c \
+	connection.c \
 	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \

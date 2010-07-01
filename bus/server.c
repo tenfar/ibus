@@ -21,13 +21,17 @@
 #include "server.h"
 #include <gio/gio.h>
 #include "dbusimpl.h"
+#include "connection.h"
 
 static void
 bus_new_connection_cb (GDBusServer     *server,
-                       GDBusConnection *connection,
+                       GDBusConnection *dbus_connection,
                        gpointer         user_data)
 {
     g_debug ("new connection");
+    BusConnection *connection = bus_connection_new (dbus_connection);
+    /* FIXME */
+    ibus_object_destroy ((IBusObject *)connection);
 }
 
 void

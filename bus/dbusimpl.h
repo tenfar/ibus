@@ -23,6 +23,7 @@
 
 #include <gio/gio.h>
 #include <ibus.h>
+#include "connection.h"
 
 /*
  * Type macros.
@@ -73,8 +74,8 @@ struct _BusDBusImplClass {
 
 GType            bus_dbus_impl_get_type         (void);
 BusDBusImpl     *bus_dbus_impl_get_default      (void);
-gboolean         bus_dbus_impl_new_connection   (BusDBusImpl     *dbus,
-                                                 GDBusConnection *connection);
+gboolean         bus_dbus_impl_new_connection   (BusDBusImpl    *dbus,
+                                                 BusConnection  *connection);
 #if 0
 /* FIXME */
 BusConnection   *bus_dbus_impl_get_connection_by_name

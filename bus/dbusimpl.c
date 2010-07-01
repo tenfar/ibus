@@ -66,14 +66,13 @@ static gboolean  bus_dbus_impl_service_set_property
                                                  const gchar        *property_name,
                                                  GVariant           *value,
                                                  GError            **error);
-static void     bus_dbus_impl_name_owner_changed(BusDBusImpl        *dbus,
+static void      bus_dbus_impl_name_owner_changed
+                                                (BusDBusImpl        *dbus,
                                                  gchar              *name,
                                                  gchar              *old_name,
                                                  gchar              *new_name);
-static void     bus_dbus_impl_connection_closed_cb
-                                                (GDBusConnection    *connection,
-                                                 gboolean            remote_peer_vanished,
-                                                 GError             *error,
+static void      bus_dbus_impl_connection_destroy_cb
+                                                (BusConnection      *connection,
                                                  BusDBusImpl        *dbus);
 static void     _rule_destroy_cb                (BusMatchRule       *rule,
                                                  BusDBusImpl        *dbus);
@@ -152,7 +151,7 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
 
     for (p = dbus->connections; p != NULL; p = p->next) {
         GDBusConnection *connection = G_DBUS_CONNECTION (p->data);
-        g_signal_handlers_disconnect_by_func (connection, bus_dbus_impl_connection_closed_cb, dbus);
+        g_signal_handlers_disconnect_by_func (connection, bus_dbus_impl_connection_destroy_cb, dbus);
         g_dbus_connection_close (connection);
         g_object_unref (connection);
     }
@@ -969,10 +968,8 @@ _connection_ibus_message_sent_cb (BusConnection  *connection,
 #endif
 
 static void
-bus_dbus_impl_connection_closed_cb (GDBusConnection *connection,
-                                    gboolean         remote_peer_vanished,
-                                    GError          *error,
-                                    BusDBusImpl     *dbus)
+bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
+                                     BusDBusImpl   *dbus)
 {
     /* FIXME */
 #if 0
@@ -1005,16 +1002,15 @@ bus_dbus_impl_connection_closed_cb (GDBusConnection *connection,
                        "");
         name = name->next;
     }
-
-    dbus->connections = g_list_remove (dbus->connections, connection);
-    g_object_unref (connection);
 #endif
+    dbus->connections = g_slist_remove (dbus->connections, connection);
+    g_object_unref (connection);
 }
 
 
 gboolean
-bus_dbus_impl_new_connection (BusDBusImpl     *dbus,
-                              GDBusConnection *connection)
+bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
+                              BusConnection *connection)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (G_IS_DBUS_CONNECTION (connection));
@@ -1034,13 +1030,11 @@ bus_dbus_impl_new_connection (BusDBusImpl     *dbus,
                       "ibus-message-sent",
                       G_CALLBACK (_connection_ibus_message_sent_cb),
                       dbus);
-
-
+#endif
     g_signal_connect (connection,
                       "destroy",
-                      G_CALLBACK (_connection_destroy_cb),
+                      G_CALLBACK (bus_dbus_impl_connection_destroy_cb),
                       dbus);
-#endif
     return TRUE;
 }
 

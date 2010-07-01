@@ -71,8 +71,6 @@ bus_connection_destroy (BusConnection *connection)
 {
     GSList *name;
 
-    IBUS_OBJECT_CLASS(bus_connection_parent_class)->destroy (IBUS_OBJECT (connection));
-
     if (connection->connection) {
         g_signal_handlers_disconnect_by_func (connection->connection,
                 G_CALLBACK (bus_connection_dbus_connection_closed_cb), connection);
@@ -88,6 +86,8 @@ bus_connection_destroy (BusConnection *connection)
     g_slist_foreach (connection->names, (GFunc) g_free, NULL);
     g_slist_free (connection->names);
     connection->names = NULL;
+
+    IBUS_OBJECT_CLASS(bus_connection_parent_class)->destroy (IBUS_OBJECT (connection));
 }
 
 static void

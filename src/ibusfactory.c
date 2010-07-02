@@ -102,8 +102,6 @@ ibus_factory_class_init (IBusFactoryClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
 
-    g_type_class_add_private (klass, sizeof (IBusFactoryPrivate));
-
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_factory_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_factory_get_property;
 
@@ -117,6 +115,8 @@ ibus_factory_class_init (IBusFactoryClass *klass)
     g_assert (introspection_data != NULL);
     IBUS_SERVICE_CLASS (klass)->interface_info = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
     g_dbus_node_info_unref (introspection_data);
+
+    g_type_class_add_private (klass, sizeof (IBusFactoryPrivate));
 }
 
 static void
@@ -224,7 +224,8 @@ ibus_factory_service_method_call (IBusService           *service,
             g_free (error_message);
         }
         else {
-            gchar *object_path = g_strdup_printf ("/org/freedesktop/IBus/Engine/%d", ++factory->priv->id);
+            gchar *object_path = g_strdup_printf ("/org/freedesktop/IBus/Engine/%s/%d",
+                                            engine_name, ++factory->priv->id);
             IBusEngine *engine = ibus_engine_new_type (engine_type,
                                                        engine_name,
                                                        object_path,

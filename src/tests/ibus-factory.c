@@ -20,6 +20,7 @@ test_factory (void)
 {
     IBusBus *bus = ibus_bus_new ();
     IBusFactory *factory = ibus_factory_new (ibus_bus_get_connection (bus));
+    ibus_bus_request_name (bus, "test.factory", 0);
 
     run_loop_with_timeout (3000);
 

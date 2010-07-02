@@ -34,7 +34,6 @@ ibus_gconf_SOURCES = \
 ibus_gconf_CFLAGS = \
 	@GLIB2_CFLAGS@ \
 	@GCONF_CFLAGS@ \
-	@DBUS_CFLAGS@ \
 	-DG_LOG_DOMAIN=\"IBUS\" \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
@@ -43,7 +42,6 @@ ibus_gconf_LDADD = \
 	@GOBJECT2_LIBS@ \
 	@GLIB2_LIBS@ \
 	@GCONF_LIBS@ \
-	@DBUS_LIBS@ \
 	$(libibus) \
 	$(NULL)
 ibus_gconf_DEPENDENCIES = \

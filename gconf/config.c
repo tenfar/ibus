@@ -1,7 +1,6 @@
 /* vim:set et sts=4: */
 
 #include <string.h>
-#include <dbus/dbus.h>
 #include <ibus.h>
 #include "config.h"
 
@@ -172,7 +171,7 @@ _to_gconf_value (GVariant *value)
             GVariantIter iter;
             GVariant *child;
             g_variant_iter_init (&iter, value);
-            while (child = g_variant_iter_next_value (&iter)) {
+            while ((child = g_variant_iter_next_value (&iter)) != NULL) {
                 elements = g_slist_append (elements, _to_gconf_value (child));
                 g_variant_unref (child);
             }
@@ -275,12 +274,10 @@ ibus_config_gconf_get_value (IBusConfigService      *config,
                              GError                **error)
 {
     g_debug ("get value: %s : %s", section, name);
-    gchar *key;
-    GConfValue *gv;
 
-    key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
+    gchar *key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
+    GConfValue *gv = gconf_client_get (((IBusConfigGConf *) config)->client, key, error);
 
-    gv = gconf_client_get (((IBusConfigGConf *) config)->client, key, error);
     g_free (key);
 
     if (gv == NULL) {
@@ -298,10 +295,7 @@ ibus_config_gconf_unset_value (IBusConfigService      *config,
                                const gchar            *name,
                                GError                **error)
 {
-    gchar *key;
-    GError *gerror = NULL;
-
-    key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
+    gchar *key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
 
     gconf_client_unset (((IBusConfigGConf *)config)->client, key, error);
     g_free (key);

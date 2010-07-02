@@ -369,6 +369,7 @@ Build options:
   Install prefix            $prefix
   Build shared libs         $enable_shared
   Build static libs         $enable_static
+  CFLAGS                    $CFLAGS
   Gtk2 immodule dir         $GTK2_IM_MODULEDIR
   Gtk3 immodule dir         $GTK3_IM_MODULEDIR
   Build gtk2 immodule       $enable_gtk2

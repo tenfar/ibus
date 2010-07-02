@@ -54,6 +54,7 @@ libibus_2_0_la_LIBADD =     \
 	@GIO2_LIBS@             \
 	$(NULL)
 libibus_2_0_la_LDFLAGS =            \
+	-no-undefined                   \
 	-export-symbols-regex "ibus_.*" \
 	-version-info @LT_VERSION_INFO@ \
 	$(NULL)

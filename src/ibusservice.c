@@ -89,6 +89,13 @@ static gboolean  ibus_service_service_set_property
 
 G_DEFINE_TYPE (IBusService, ibus_service, IBUS_TYPE_OBJECT)
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus.Service'>"
+    "    <method name='Destroy' />"
+    "  </interface>"
+    "</node>";
+
 static void
 ibus_service_class_init (IBusServiceClass *klass)
 {
@@ -103,6 +110,10 @@ ibus_service_class_init (IBusServiceClass *klass)
     klass->service_method_call = ibus_service_service_method_call;
     klass->service_get_property = ibus_service_service_get_property;
     klass->service_set_property = ibus_service_service_set_property;
+
+    /* class members */
+    klass->interfaces = g_array_new (TRUE, TRUE, sizeof (GDBusInterfaceInfo));
+    ibus_service_class_add_interfaces (klass, introspection_xml);
 
     /* install properties */
     /**
@@ -406,3 +417,23 @@ ibus_service_emit_signal (IBusService *service,
                                           error);
 }
 
+gboolean
+ibus_service_class_add_interfaces (IBusServiceClass   *klass,
+                                   const gchar        *xml_data)
+{
+    g_return_val_if_fail (IBUS_IS_SERVICE_CLASS (klass), FALSE);
+    g_return_val_if_fail (xml_data != NULL, FALSE);
+
+    GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml (xml_data, NULL);
+    if (introspection_data != NULL) {
+        GDBusInterfaceInfo **p = introspection_data->interfaces;
+        while (*p != NULL) {
+            g_dbus_interface_info_ref (*p);
+            g_array_append_val (klass->interfaces, *p);
+            p++;
+        }
+        g_dbus_node_info_unref (introspection_data);
+        return TRUE;
+    }
+    return FALSE;
+}

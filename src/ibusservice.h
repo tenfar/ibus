@@ -101,7 +101,7 @@ struct _IBusServiceClass {
                                      GVariant           *value,
                                      GError            **error);
     /*< private >*/
-    GDBusInterfaceInfo *interface_info;
+    GArray *interfaces;
 
     /* padding */
     gpointer pdummy[4];
@@ -155,6 +155,18 @@ gboolean         ibus_service_emit_signal       (IBusService        *service,
                                                  const gchar        *signal_name,
                                                  GVariant           *parameters,
                                                  GError            **error);
+/**
+ * ibus_service_class_add_interfaces:
+ * @klass: An IBusServiceClass.
+ * @xml_data: The introspection xml data.
+ * @error: Error.
+ *
+ * Set the interface introspection information with the service class.
+ */
+gboolean         ibus_service_class_add_interfaces
+                                                (IBusServiceClass   *klass,
+                                                 const gchar        *xml_data);
+
 G_END_DECLS
 #endif
 

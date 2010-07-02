@@ -92,7 +92,6 @@ static const gchar introspection_xml[] =
     "      <arg direction='in'  type='s' name='name' />"
     "      <arg direction='out' type='o' />"
     "    </method>"
-    "    <method name='Destroy' />"
     "  </interface>"
     "</node>";
 
@@ -111,10 +110,7 @@ ibus_factory_class_init (IBusFactoryClass *klass)
     IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_factory_service_get_property;
     IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_factory_service_set_property;
 
-    GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
-    g_assert (introspection_data != NULL);
-    IBUS_SERVICE_CLASS (klass)->interface_info = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
-    g_dbus_node_info_unref (introspection_data);
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
 
     g_type_class_add_private (klass, sizeof (IBusFactoryPrivate));
 }

@@ -88,6 +88,26 @@ static gboolean  ibus_config_service_unset_value     (IBusConfigService      *co
 
 G_DEFINE_TYPE (IBusConfigService, ibus_config_service, IBUS_TYPE_SERVICE)
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus.Config'>"
+    "    <method name='SetValue'>"
+    "      <arg direction='in'  type='s' name='section' />"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='in'  type='v' name='value' />"
+    "    </method>"
+    "    <method name='GetValue'>"
+    "      <arg direction='in'  type='s' name='section' />"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='out' type='v' />"
+    "    </method>"
+    "    <method name='UnsetValue'>"
+    "      <arg direction='in'  type='s' name='section' />"
+    "      <arg direction='in'  type='s' name='name' />"
+    "    </method>"
+    "  </interface>"
+    "</node>";
+
 static void
 ibus_config_service_class_init (IBusConfigServiceClass *klass)
 {
@@ -101,6 +121,8 @@ ibus_config_service_class_init (IBusConfigServiceClass *klass)
     IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_config_service_service_method_call;
     IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_config_service_service_get_property;
     IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_config_service_service_set_property;
+
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
 
     klass->set_value   = ibus_config_service_set_value;
     klass->get_value   = ibus_config_service_get_value;

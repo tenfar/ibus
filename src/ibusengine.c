@@ -222,10 +222,7 @@ ibus_engine_class_init (IBusEngineClass *klass)
     IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_engine_service_get_property;
     IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_engine_service_set_property;
 
-    GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml (introspection_xml, NULL);
-    g_assert (introspection_data != NULL);
-    IBUS_SERVICE_CLASS (klass)->interface_info = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
-    g_dbus_node_info_unref (introspection_data);
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
 
     klass->process_key_event = ibus_engine_process_key_event;
     klass->focus_in     = ibus_engine_focus_in;

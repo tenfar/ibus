@@ -133,6 +133,9 @@ static void      ibus_engine_property_show   (IBusEngine         *engine,
                                               const gchar        *prop_name);
 static void      ibus_engine_property_hide   (IBusEngine         *engine,
                                               const gchar        *prop_name);
+static void      ibus_engine_emit_signal     (IBusEngine         *engine,
+                                              const gchar        *signal_name,
+                                              GVariant           *parameters);
 
 
 G_DEFINE_TYPE (IBusEngine, ibus_engine, IBUS_TYPE_SERVICE)
@@ -944,6 +947,19 @@ ibus_engine_property_hide (IBusEngine *engine, const gchar *prop_name)
     // g_debug ("property-hide ('%s')", prop_name);
 }
 
+static void
+ibus_engine_emit_signal (IBusEngine  *engine,
+                         const gchar *signal_name,
+                         GVariant    *parameters)
+{
+    ibus_service_emit_signal ((IBusService *)engine,
+                              NULL,
+                              IBUS_INTERFACE_ENGINE,
+                              signal_name,
+                              parameters,
+                              NULL);
+}
+
 #if 0
 static void
 _send_signal (IBusEngine  *engine,
@@ -1012,11 +1028,9 @@ ibus_engine_commit_text (IBusEngine *engine,
     g_return_if_fail (IBUS_IS_TEXT (text));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)text);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "CommitText",
-                              g_variant_new ("(v)", variant),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "CommitText",
+                             g_variant_new ("(v)", variant));
 
     if (g_object_is_floating (text)) {
         g_object_unref (text);
@@ -1044,11 +1058,9 @@ ibus_engine_update_preedit_text_with_mode (IBusEngine            *engine,
     g_return_if_fail (IBUS_IS_TEXT (text));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)text);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "UpdatePreeditText",
-                              g_variant_new ("(vubu)", variant, cursor_pos, visible, mode),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "UpdatePreeditText",
+                             g_variant_new ("(vubu)", variant, cursor_pos, visible, mode));
 
     if (g_object_is_floating (text)) {
         g_object_unref (text);
@@ -1063,11 +1075,9 @@ void ibus_engine_update_auxiliary_text (IBusEngine      *engine,
     g_return_if_fail (IBUS_IS_TEXT (text));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)text);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "UpdateAuxiliaryText",
-                              g_variant_new ("(vb)", variant, visible),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "UpdateAuxiliaryText",
+                             g_variant_new ("(vb)", variant, visible));
 
     if (g_object_is_floating (text)) {
         g_object_unref (text);
@@ -1084,11 +1094,9 @@ ibus_engine_update_lookup_table (IBusEngine        *engine,
     g_return_if_fail (IBUS_IS_LOOKUP_TABLE (table));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)table);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "UpdateLookupTable",
-                              g_variant_new ("(vb)", variant, visible),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "UpdateLookupTable",
+                             g_variant_new ("(vb)", variant, visible));
 
     if (g_object_is_floating (table)) {
         g_object_unref (table);
@@ -1143,11 +1151,9 @@ ibus_engine_forward_key_event (IBusEngine      *engine,
 {
     g_return_if_fail (IBUS_IS_ENGINE (engine));
 
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "ForwardKeyEvent",
-                              g_variant_new ("(uuu)", keyval, keycode, state),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "ForwardKeyEvent",
+                             g_variant_new ("(uuu)", keyval, keycode, state));
 }
 
 void ibus_engine_delete_surrounding_text (IBusEngine      *engine,
@@ -1156,11 +1162,9 @@ void ibus_engine_delete_surrounding_text (IBusEngine      *engine,
 {
     g_return_if_fail (IBUS_IS_ENGINE (engine));
 
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "DeleteSurroundingText",
-                              g_variant_new ("(iu)", offset_from_cursor, nchars),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "DeleteSurroundingText",
+                             g_variant_new ("(iu)", offset_from_cursor, nchars));
 }
 
 void
@@ -1171,11 +1175,9 @@ ibus_engine_register_properties (IBusEngine   *engine,
     g_return_if_fail (IBUS_IS_PROP_LIST (prop_list));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)prop_list);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "RegisterProperties",
-                              g_variant_new ("(v)", variant),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "RegisterProperties",
+                             g_variant_new ("(v)", variant));
 
     if (g_object_is_floating (prop_list)) {
         g_object_unref (prop_list);
@@ -1190,11 +1192,9 @@ ibus_engine_update_property (IBusEngine   *engine,
     g_return_if_fail (IBUS_IS_PROPERTY (prop));
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)prop);
-    ibus_service_emit_signal ((IBusService *)engine,
-                              NULL,
-                              "UpdateProperty",
-                              g_variant_new ("(v)", variant),
-                              NULL);
+    ibus_engine_emit_signal (engine,
+                             "UpdateProperty",
+                             g_variant_new ("(v)", variant));
 
     if (g_object_is_floating (prop)) {
         g_object_unref (prop);
@@ -1206,10 +1206,8 @@ ibus_engine_update_property (IBusEngine   *engine,
     ibus_engine_##name (IBusEngine *engine)                 \
     {                                                       \
         g_return_if_fail (IBUS_IS_ENGINE (engine));         \
-        ibus_service_emit_signal ((IBusService *)engine,    \
-                              NULL,                         \
+        ibus_engine_emit_signal (engine,                    \
                               #Name,                        \
-                              NULL,                         \
                               NULL);                        \
     }
 DEFINE_FUNC (show_preedit_text, ShowPreeditText)

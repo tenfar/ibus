@@ -298,7 +298,6 @@ ibus_factory_new (GDBusConnection *connection)
 
     IBusEngine *object = g_object_new (IBUS_TYPE_FACTORY,
                                        "object-path", IBUS_PATH_FACTORY,
-                                       "interface-name", IBUS_INTERFACE_FACTORY,
                                        "connection", connection,
                                        NULL);
 

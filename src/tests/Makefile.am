@@ -38,6 +38,7 @@ TESTS =               \
 	ibus-serializable \
 	ibus-share        \
 	ibus-factory      \
+	ibus-configservice\
 	$(NULL)
 
 ibus_bus_SOURCES = ibus-bus.c
@@ -55,3 +56,6 @@ ibus_share_LDADD = $(prog_ldadd) @DBUS_LIBS@
 
 ibus_factory_SOURCES = ibus-factory.c
 ibus_factory_LDADD = $(prog_ldadd)
+
+ibus_configservice_SOURCES = ibus-configservice.c
+ibus_configservice_LDADD = $(prog_ldadd)

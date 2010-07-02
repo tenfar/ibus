@@ -32,17 +32,14 @@ enum {
 enum {
     PROP_0,
     PROP_OBJECT_PATH,
-    PROP_INTERFACE_NAME,
-    PROP_INTERFACE_INFO,
     PROP_CONNECTION,
 };
 
 /* IBusServicePrivate */
 struct _IBusServicePrivate {
     gchar *object_path;
-    gchar *interface_name;
-    GDBusInterfaceInfo *interface_info;
     GDBusConnection *connection;
+    GHashTable *table;
 };
 
 /*
@@ -50,15 +47,16 @@ static guint    service_signals[LAST_SIGNAL] = { 0 };
 */
 
 /* functions prototype */
-static void      ibus_service_destroy        (IBusService        *service);
+static void      ibus_service_constructed    (GObject            *object);
 static void      ibus_service_set_property   (IBusService        *service,
-                                              guint              prop_id,
+                                              guint               prop_id,
                                               const GValue       *value,
                                               GParamSpec         *pspec);
 static void      ibus_service_get_property   (IBusService        *service,
-                                              guint              prop_id,
+                                              guint               prop_id,
                                               GValue             *value,
                                               GParamSpec         *pspec);
+static void      ibus_service_destroy        (IBusService        *service);
 static void      ibus_service_service_method_call
                                              (IBusService        *service,
                                               GDBusConnection    *connection,
@@ -86,6 +84,47 @@ static gboolean  ibus_service_service_set_property
                                               const gchar        *property_name,
                                               GVariant           *value,
                                               GError            **error);
+static void      ibus_service_service_method_call_cb
+                                             (GDBusConnection    *connection,
+                                              const gchar        *sender,
+                                              const gchar        *object_path,
+                                              const gchar        *interface_name,
+                                              const gchar        *method_name,
+                                              GVariant           *parameters,
+                                              GDBusMethodInvocation
+                                                                 *invocation,
+                                              IBusService        *service);
+static GVariant *ibus_service_service_get_property_cb
+                                             (GDBusConnection    *connection,
+                                              const gchar        *sender,
+                                              const gchar        *object_path,
+                                              const gchar        *interface_name,
+                                              const gchar        *property_name,
+                                              GError            **error,
+                                              IBusService        *service);
+static gboolean  ibus_service_service_set_property_cb
+                                             (GDBusConnection    *connection,
+                                              const gchar        *sender,
+                                              const gchar        *object_path,
+                                              const gchar        *interface_name,
+                                              const gchar        *property_name,
+                                              GVariant           *value,
+                                              GError            **error,
+                                              IBusService        *service);
+static void      ibus_service_connection_closed_cb
+                                             (GDBusConnection    *connection,
+                                              gboolean            remote_peer_vanished,
+                                              GError             *error,
+                                              IBusService        *service);
+static void      ibus_service_unregister_cb  (GDBusConnection    *connection,
+                                              guint              *ids,
+                                              IBusService        *service);
+
+static const GDBusInterfaceVTable ibus_service_interface_vtable = {
+    (GDBusInterfaceMethodCallFunc) ibus_service_service_method_call_cb,
+    (GDBusInterfaceGetPropertyFunc) ibus_service_service_get_property_cb,
+    (GDBusInterfaceSetPropertyFunc) ibus_service_service_set_property_cb
+};
 
 G_DEFINE_TYPE (IBusService, ibus_service, IBUS_TYPE_OBJECT)
 
@@ -102,9 +141,10 @@ ibus_service_class_init (IBusServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
 
+    gobject_class->constructed  = ibus_service_constructed;
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_service_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_service_get_property;
-    ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_service_destroy;
+    ibus_object_class->destroy  = (IBusObjectDestroyFunc) ibus_service_destroy;
 
     /* virtual functions */
     klass->service_method_call = ibus_service_service_method_call;
@@ -136,44 +176,6 @@ ibus_service_class_init (IBusServiceClass *klass)
                         G_PARAM_STATIC_BLURB)
                     );
     /**
-     * IBusService:interface-name:
-     *
-     * The interface name.
-     */
-    g_object_class_install_property (
-                    gobject_class,
-                    PROP_INTERFACE_NAME,
-                    g_param_spec_string (
-                        "interface-name",
-                        "interface name",
-                        "The interface name of service object",
-                        NULL,
-                        G_PARAM_READWRITE |
-                        G_PARAM_CONSTRUCT_ONLY |
-                        G_PARAM_STATIC_NAME |
-                        G_PARAM_STATIC_NICK |
-                        G_PARAM_STATIC_BLURB)
-                    );
-    /**
-     * IBusService:interface-info:
-     *
-     * The interface info.
-     */
-    g_object_class_install_property (
-                    gobject_class,
-                    PROP_INTERFACE_INFO,
-                    g_param_spec_boxed (
-                        "interface-info",
-                        "interface info",
-                        "The interface info of service object",
-                        G_TYPE_DBUS_INTERFACE_INFO,
-                        G_PARAM_READWRITE |
-                        G_PARAM_CONSTRUCT_ONLY |
-                        G_PARAM_STATIC_NAME |
-                        G_PARAM_STATIC_NICK |
-                        G_PARAM_STATIC_BLURB)
-                    );
-    /**
      * IBusService:connection:
      *
      * The connection of service object.
@@ -193,56 +195,6 @@ ibus_service_class_init (IBusServiceClass *klass)
                         G_PARAM_STATIC_BLURB)
                     );
 
-
-    /* XXX */
-    #if 0
-    /* Install signals */
-    /**
-     * IBusService::ibus-message:
-     * @service: An IBusService.
-     * @connection: Corresponding IBusConnection.
-     * @message: An IBusMessage to be sent.
-     *
-     * Send a message as IBusMessage though the @connection.
-     *
-     * Returns: TRUE if succeed; FALSE otherwise.
-     * <note><para>Argument @user_data is ignored in this function.</para></note>
-     */
-    service_signals[IBUS_MESSAGE] =
-        g_signal_new (I_("ibus-message"),
-            G_TYPE_FROM_CLASS (klass),
-            G_SIGNAL_RUN_LAST,
-            G_STRUCT_OFFSET (IBusServiceClass, ibus_message),
-            NULL, NULL,
-            ibus_marshal_BOOLEAN__POINTER_POINTER,
-            G_TYPE_BOOLEAN,
-            2,
-            G_TYPE_POINTER,
-            G_TYPE_POINTER);
-
-    /**
-     * IBusService::ibus-signal:
-     * @service: An IBusService.
-     * @connection: Corresponding IBusConnection.
-     * @message: An IBusMessage to be sent.
-     *
-     * Send a signal as IBusMessage though the @connection.
-     *
-     * Returns: TRUE if succeed; FALSE otherwise.
-     * <note><para>Argument @user_data is ignored in this function.</para></note>
-     */
-    service_signals[IBUS_SIGNAL] =
-        g_signal_new (I_("ibus-signal"),
-            G_TYPE_FROM_CLASS (klass),
-            G_SIGNAL_RUN_LAST,
-            G_STRUCT_OFFSET (IBusServiceClass, ibus_signal),
-            NULL, NULL,
-            ibus_marshal_BOOLEAN__POINTER_POINTER,
-            G_TYPE_BOOLEAN,
-            2,
-            G_TYPE_POINTER,
-            G_TYPE_POINTER);
-    #endif
     g_type_class_add_private (klass, sizeof (IBusServicePrivate));
 }
 
@@ -250,28 +202,15 @@ static void
 ibus_service_init (IBusService *service)
 {
     service->priv = IBUS_SERVICE_GET_PRIVATE (service);
+    service->priv->table = g_hash_table_new (NULL, NULL);
 }
 
 static void
-ibus_service_destroy (IBusService *service)
+ibus_service_constructed (GObject *object)
 {
-    g_free (service->priv->object_path);
-    service->priv->object_path = NULL;
-
-    g_free (service->priv->interface_name);
-    service->priv->interface_name = NULL;
-
-    if (service->priv->interface_info) {
-        g_dbus_interface_info_unref (service->priv->interface_info);
-        service->priv->interface_info = NULL;
-    }
-
-    if (service->priv->connection) {
-        g_object_unref (service->priv->connection);
-        service->priv->connection = NULL;
-    }
-
-    IBUS_OBJECT_CLASS(ibus_service_parent_class)->destroy (IBUS_OBJECT (service));
+    IBusService *service = (IBusService *)object;
+    if (service->priv->connection)
+        ibus_service_register (service, service->priv->connection, NULL);
 }
 
 static void
@@ -283,14 +222,6 @@ ibus_service_set_property (IBusService  *service,
     switch (prop_id) {
     case PROP_OBJECT_PATH:
         service->priv->object_path = g_value_dup_string (value);
-        break;
-    case PROP_INTERFACE_NAME:
-        service->priv->interface_name = g_value_dup_string (value);
-        break;
-    case PROP_INTERFACE_INFO:
-        service->priv->interface_info = g_value_get_boxed (value);
-        if (service->priv->interface_info)
-            g_dbus_interface_info_ref (service->priv->interface_info);
         break;
     case PROP_CONNECTION:
         service->priv->connection = g_value_dup_object (value);
@@ -310,12 +241,6 @@ ibus_service_get_property (IBusService *service,
     case PROP_OBJECT_PATH:
         g_value_set_string (value, service->priv->object_path);
         break;
-    case PROP_INTERFACE_NAME:
-        g_value_set_string (value, service->priv->interface_name);
-        break;
-    case PROP_INTERFACE_INFO:
-        g_value_set_boxed (value, service->priv->interface_info);
-        break;
     case PROP_CONNECTION:
         g_value_set_object (value, service->priv->connection);
         break;
@@ -323,6 +248,28 @@ ibus_service_get_property (IBusService *service,
         G_OBJECT_WARN_INVALID_PROPERTY_ID (service, prop_id, pspec);
     }
 }
+
+static void
+ibus_service_destroy (IBusService *service)
+{
+    g_free (service->priv->object_path);
+    service->priv->object_path = NULL;
+
+    if (service->priv->connection) {
+        g_object_unref (service->priv->connection);
+        service->priv->connection = NULL;
+    }
+
+    if (service->priv->table) {
+        g_hash_table_foreach_remove (service->priv->table,
+                        (GHRFunc)ibus_service_unregister_cb, service);
+        g_hash_table_destroy (service->priv->table);
+        service->priv->table = NULL;
+    }
+
+    IBUS_OBJECT_CLASS(ibus_service_parent_class)->destroy (IBUS_OBJECT (service));
+}
+
 
 static void
 ibus_service_service_method_call (IBusService           *service,
@@ -372,6 +319,91 @@ ibus_service_service_set_property (IBusService     *service,
     return FALSE;
 }
 
+static void
+ibus_service_service_method_call_cb (GDBusConnection       *connection,
+                                     const gchar           *sender,
+                                     const gchar           *object_path,
+                                     const gchar           *interface_name,
+                                     const gchar           *method_name,
+                                     GVariant              *parameters,
+                                     GDBusMethodInvocation *invocation,
+                                     IBusService           *service)
+{
+    IBUS_SERVICE_GET_CLASS (service)->service_method_call (service,
+                                                           connection,
+                                                           sender,
+                                                           object_path,
+                                                           interface_name,
+                                                           method_name,
+                                                           parameters,
+                                                           invocation);
+}
+
+static GVariant *
+ibus_service_service_get_property_cb (GDBusConnection   *connection,
+                                      const gchar       *sender,
+                                      const gchar       *object_path,
+                                      const gchar       *interface_name,
+                                      const gchar       *property_name,
+                                      GError           **error,
+                                      IBusService       *service)
+{
+    return IBUS_SERVICE_GET_CLASS (service)->service_get_property (service,
+                                                                   connection,
+                                                                   sender,
+                                                                   object_path,
+                                                                   interface_name,
+                                                                   property_name,
+                                                                   error);
+}
+
+static gboolean
+ibus_service_service_set_property_cb (GDBusConnection    *connection,
+                                      const gchar        *sender,
+                                      const gchar        *object_path,
+                                      const gchar        *interface_name,
+                                      const gchar        *property_name,
+                                      GVariant           *value,
+                                      GError            **error,
+                                      IBusService        *service)
+{
+    return IBUS_SERVICE_GET_CLASS (service)->service_set_property (service,
+                                                                   connection,
+                                                                   sender,
+                                                                   object_path,
+                                                                   interface_name,
+                                                                   property_name,
+                                                                   value,
+                                                                   error);
+}
+
+static void
+ibus_service_connection_closed_cb (GDBusConnection    *connection,
+                                   gboolean            remote_peer_vanished,
+                                   GError             *error,
+                                   IBusService        *service)
+{
+    ibus_service_unregister (service, connection);
+    if (connection == service->priv->connection) {
+        ibus_object_destroy ((IBusObject *) service);
+    }
+}
+
+static void
+ibus_service_unregister_cb (GDBusConnection    *connection,
+                            guint              *ids,
+                            IBusService        *service)
+{
+    guint *p = ids;
+    while (*p != 0) {
+        g_dbus_connection_unregister_object (connection, *p++);
+    }
+    g_signal_handlers_disconnect_by_func (connection,
+                    G_CALLBACK (ibus_service_connection_closed_cb), service);
+    g_object_unref (connection);
+    g_free (ids);
+}
+
 IBusService *
 ibus_service_new (GDBusConnection *connection,
                   const gchar     *object_path)
@@ -401,17 +433,103 @@ ibus_service_get_connection (IBusService *service)
 }
 
 gboolean
+ibus_service_register (IBusService     *service,
+                       GDBusConnection *connection,
+                       GError         **error)
+{
+    g_return_val_if_fail (IBUS_IS_SERVICE (service), FALSE);
+    g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
+    g_return_val_if_fail ((connection == service->priv->connection || service->priv->connection == NULL),
+                          FALSE);
+    g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+    GArray *array = NULL;
+
+    if (g_hash_table_lookup (service->priv->table, connection)) {
+        if (error) {
+            *error = g_error_new (G_DBUS_ERROR, G_DBUS_ERROR_OBJECT_PATH_IN_USE,
+                            "Service %p has been registered with connection %p.",
+                            service, connection);
+        }
+        goto error_out;
+    }
+
+    GDBusInterfaceInfo **p = (GDBusInterfaceInfo **)IBUS_SERVICE_GET_CLASS (service)->interfaces->data;
+    if (p == NULL) {
+        if (error) {
+            *error = g_error_new (G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                            "Service %p does not have any interface.",
+                            service);
+        }
+        goto error_out;
+    }
+
+    array = g_array_new (TRUE, TRUE, sizeof (guint));
+    while (*p != NULL) {
+        guint id = g_dbus_connection_register_object (connection,
+                                                      service->priv->object_path,
+                                                      *p,
+                                                      &ibus_service_interface_vtable,
+                                                      g_object_ref (service),
+                                                      (GDestroyNotify)g_object_unref,
+                                                      error);
+        if (id != 0) {
+            g_array_append_val (array, id);
+        }
+        else {
+            g_object_unref (service);
+            goto error_out;
+        }
+        p++;
+    }
+    g_signal_connect (connection, "closed",
+                    G_CALLBACK (ibus_service_connection_closed_cb), service);
+    g_hash_table_insert (service->priv->table,
+                    g_object_ref (connection), g_array_free (array, FALSE));
+    return TRUE;
+error_out:
+    if (array != NULL) {
+        guint *ids = (guint*) array->data;
+        while (*ids != 0) {
+            g_dbus_connection_unregister_object (connection, *ids++);
+        }
+        g_array_free (array, TRUE);
+    }
+    return FALSE;
+}
+
+void
+ibus_service_unregister (IBusService     *service,
+                         GDBusConnection *connection)
+{
+    g_return_if_fail (IBUS_IS_SERVICE (service));
+    g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
+
+    guint *ids = (guint *) g_hash_table_lookup (service->priv->table, connection);
+    g_return_if_fail (ids != NULL);
+
+    ibus_service_unregister_cb (connection, ids, service);
+    g_hash_table_remove (service->priv->table, connection);
+}
+
+gboolean
 ibus_service_emit_signal (IBusService *service,
                           const gchar *dest_bus_name,
+                          const gchar *interface_name,
                           const gchar *signal_name,
                           GVariant    *parameters,
                           GError    **error)
 {
     g_return_val_if_fail (IBUS_IS_SERVICE (service), FALSE);
+    g_return_val_if_fail (interface_name != NULL, FALSE);
+    g_return_val_if_fail (signal_name != NULL, FALSE);
+    g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+    g_return_val_if_fail (service->priv->connection != NULL, FALSE);
+
     return g_dbus_connection_emit_signal (service->priv->connection,
                                           dest_bus_name,
                                           service->priv->object_path,
-                                          service->priv->interface_name,
+                                          interface_name,
                                           signal_name,
                                           parameters,
                                           error);

@@ -376,6 +376,7 @@ ibus_config_service_value_changed (IBusConfigService  *config,
 
     ibus_service_emit_signal ((IBusService *) config,
                               NULL,
+                              IBUS_INTERFACE_CONFIG,
                               "ValueChanged",
                               g_variant_new ("(ssv)", section, name, value),
                               NULL);

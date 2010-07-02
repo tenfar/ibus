@@ -133,9 +133,33 @@ const gchar     *ibus_service_get_path          (IBusService        *service);
  * @service: An IBusService.
  * @returns: (transfer all) (element-type GDBusConnection): A newly allocated list of connections.
  *
- * Returns a copy of list of connections, but the caller also owns the element.
+ * Returns a connections.
  */
 GDBusConnection *ibus_service_get_connection    (IBusService        *service);
+
+/**
+ * ibus_service_register:
+ * @service: An IBusService.
+ * @connection: A GDBusConnection the service will be registered to.
+ * @error: Return location for error or NULL.
+ * @returns: TRUE if the service was registered, FALSE otherwise.
+ *
+ * Registers service to a connection.
+ */
+gboolean         ibus_service_register          (IBusService        *service,
+                                                 GDBusConnection    *connection,
+                                                 GError            **error);
+/**
+ * ibus_service_unregister:
+ * @service: An IBusService.
+ * @connection: A GDBusConnection the service was registered with.
+ *
+ * Unregisters service from a connection.
+ */
+void             ibus_service_unregister        (IBusService        *service,
+                                                 GDBusConnection    *connection);
+
+
 
 /**
  * ibus_service_send_signal:
@@ -152,6 +176,7 @@ GDBusConnection *ibus_service_get_connection    (IBusService        *service);
  */
 gboolean         ibus_service_emit_signal       (IBusService        *service,
                                                  const gchar        *dest_bus_name,
+                                                 const gchar        *interface_name,
                                                  const gchar        *signal_name,
                                                  GVariant           *parameters,
                                                  GError            **error);
@@ -166,6 +191,7 @@ gboolean         ibus_service_emit_signal       (IBusService        *service,
 gboolean         ibus_service_class_add_interfaces
                                                 (IBusServiceClass   *klass,
                                                  const gchar        *xml_data);
+
 
 G_END_DECLS
 #endif

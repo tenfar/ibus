@@ -236,7 +236,7 @@ ibus_config_service_service_method_call (IBusService           *service,
         g_variant_get (parameters, "(&s&s)", &section, &name);
 
         value = IBUS_CONFIG_SERVICE_GET_CLASS (config)->get_value (config, section, name, &error);
-        if (value == NULL) {
+        if (value != NULL) {
             g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", value));
         }
         else {

@@ -86,7 +86,7 @@ _value_changed_cb (GConfClient     *client,
 
 
     GVariant *variant = _from_gconf_value (value);
-    g_return_if_fail (value != NULL);
+    g_return_if_fail (variant != NULL);
     ibus_config_service_value_changed ((IBusConfigService *) config,
                                        section,
                                        name,
@@ -187,7 +187,7 @@ _to_gconf_value (GVariant *value)
 static GVariant *
 _from_gconf_value (const GConfValue *gv)
 {
-    g_assert (gv);
+    g_assert (gv != NULL);
 
     switch (gv->type) {
     case GCONF_VALUE_STRING:
@@ -200,18 +200,20 @@ _from_gconf_value (const GConfValue *gv)
         return g_variant_new_boolean (gconf_value_get_bool (gv));
     case GCONF_VALUE_LIST:
         {
+            GVariantBuilder builder;
             switch (gconf_value_get_list_type (gv)) {
             case GCONF_VALUE_STRING:
+                g_variant_builder_init (&builder, G_VARIANT_TYPE("as")); break;
             case GCONF_VALUE_INT:
+                g_variant_builder_init (&builder, G_VARIANT_TYPE("ai")); break;
             case GCONF_VALUE_FLOAT:
+                g_variant_builder_init (&builder, G_VARIANT_TYPE("ad")); break;
             case GCONF_VALUE_BOOL:
+                g_variant_builder_init (&builder, G_VARIANT_TYPE("ab")); break;
                 break;
             default:
-                g_return_val_if_reached (NULL);
+                g_assert_not_reached ();
             }
-
-            GVariantBuilder builder;
-            g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
 
             GSList *list = gconf_value_get_list (gv);
             GSList *p = list;
@@ -234,10 +236,10 @@ _from_gconf_value (const GConfValue *gv)
                 }
                 p = p->next;
             }
+            return g_variant_builder_end (&builder);
         }
     default:
-        g_return_val_if_reached (NULL);
-        break;
+        g_assert_not_reached ();
     }
 }
 
@@ -273,7 +275,6 @@ ibus_config_gconf_get_value (IBusConfigService      *config,
                              const gchar            *name,
                              GError                **error)
 {
-    g_debug ("get value: %s : %s", section, name);
 
     gchar *key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
     GConfValue *gv = gconf_client_get (((IBusConfigGConf *) config)->client, key, error);
@@ -286,6 +287,9 @@ ibus_config_gconf_get_value (IBusConfigService      *config,
 
     GVariant *variant = _from_gconf_value (gv);
     gconf_value_free (gv);
+    gchar *str = g_variant_print (variant, TRUE);
+    g_debug ("get value: [%s:%s] = %s", section, name, str);
+    g_free (str);
     return variant;
 }
 

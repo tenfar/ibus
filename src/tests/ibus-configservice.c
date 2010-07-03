@@ -4,6 +4,7 @@ static gboolean
 timeout_cb (gpointer data)
 {
     g_main_loop_quit ((GMainLoop *)data);
+    return FALSE;
 }
 
 static void

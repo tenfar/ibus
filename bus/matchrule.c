@@ -19,6 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include "matchrule.h"
+#include <string.h>
 
 #define BUS_CONFIG_PROXY_GET_PRIVATE(o)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUS_TYPE_CONFIG_PROXY, BusMatchRulePrivate))
@@ -466,6 +467,8 @@ bus_match_rule_match (BusMatchRule   *rule,
                     g_variant_unref (variant);
                     continue;
                 }
+            default:
+                break;
             }
             g_variant_unref (variant);
             return FALSE;

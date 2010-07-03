@@ -295,4 +295,5 @@ main (gint argc, gchar **argv)
 
     bus_server_run (server);
 #endif
+    return 0;
 }

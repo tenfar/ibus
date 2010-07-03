@@ -181,6 +181,7 @@ _to_gconf_value (GVariant *value)
     default:
         g_return_val_if_reached (NULL);
     }
+
     return gv;
 }
 
@@ -252,11 +253,18 @@ ibus_config_gconf_set_value (IBusConfigService      *config,
                              GError                **error)
 {
     g_debug ("set value: %s : %s", section, name);
-
     gchar *key;
     GConfValue *gv;
 
     gv = _to_gconf_value (value);
+    if (gv == NULL) {
+        gchar *str = g_variant_print (value, TRUE);
+        *error = g_error_new (G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Can not set config value [%s:%s] to %s.",
+                        section, name, str);
+        g_free (str);
+        return FALSE;
+    }
     key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
     gconf_client_set (((IBusConfigGConf *)config)->client, key, gv, error);
 
@@ -277,19 +285,24 @@ ibus_config_gconf_get_value (IBusConfigService      *config,
 {
 
     gchar *key = g_strdup_printf (GCONF_PREFIX"/%s/%s", section, name);
-    GConfValue *gv = gconf_client_get (((IBusConfigGConf *) config)->client, key, error);
+
+    GConfValue *gv = gconf_client_get (((IBusConfigGConf *) config)->client, key, NULL);
 
     g_free (key);
 
     if (gv == NULL) {
+        *error = g_error_new (G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Config value [%s:%s] does not exist.", section, name);
         return NULL;
     }
 
     GVariant *variant = _from_gconf_value (gv);
     gconf_value_free (gv);
+#if 0
     gchar *str = g_variant_print (variant, TRUE);
     g_debug ("get value: [%s:%s] = %s", section, name, str);
     g_free (str);
+#endif
     return variant;
 }
 

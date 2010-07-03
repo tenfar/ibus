@@ -99,7 +99,7 @@ static const gchar introspection_xml[] =
     "    <method name='GetValue'>"
     "      <arg direction='in'  type='s' name='section' />"
     "      <arg direction='in'  type='s' name='name' />"
-    "      <arg direction='out' type='v' />"
+    "      <arg direction='out' type='v' name='value' />"
     "    </method>"
     "    <method name='UnsetValue'>"
     "      <arg direction='in'  type='s' name='section' />"

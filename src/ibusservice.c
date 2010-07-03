@@ -183,6 +183,13 @@ ibus_service_base_fini (IBusServiceClass *klass)
     g_free (interfaces);
 }
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus.Service'>"
+    "    <method name='Destroy' />"
+    "  </interface>"
+    "</node>";
+
 static void
 ibus_service_class_init (IBusServiceClass *klass)
 {
@@ -202,13 +209,6 @@ ibus_service_class_init (IBusServiceClass *klass)
     klass->service_set_property = ibus_service_service_set_property;
 
     /* class members */
-    klass->interfaces = g_array_new (TRUE, TRUE, sizeof (GDBusInterfaceInfo *));
-    static const gchar introspection_xml[] =
-        "<node>"
-        "  <interface name='org.freedesktop.IBus.Service'>"
-        "    <method name='Destroy' />"
-        "  </interface>"
-        "</node>";
     ibus_service_class_add_interfaces (klass, introspection_xml);
 
     /* install properties */

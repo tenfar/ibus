@@ -35,21 +35,11 @@ static void     bus_connection_dbus_connection_closed_cb
                                              gboolean            remote_peer_vanished,
                                              GError             *error,
                                              BusConnection      *connection);
+static GQuark   bus_connection_quark        (void);
+
+#define BUS_CONNECTION_QUARK (bus_connection_quark ())
 
 G_DEFINE_TYPE (BusConnection, bus_connection, IBUS_TYPE_OBJECT)
-
-BusConnection *
-bus_connection_new (GDBusConnection *dbus_connection)
-{
-    g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
-    g_return_val_if_fail (!g_dbus_connection_is_closed (dbus_connection), NULL);
-
-    BusConnection *connection = BUS_CONNECTION (g_object_new (BUS_TYPE_CONNECTION, NULL));
-
-    bus_connection_set_dbus_connection (connection, dbus_connection);
-
-    return connection;
-}
 
 static void
 bus_connection_class_init (BusConnectionClass *klass)
@@ -69,11 +59,10 @@ bus_connection_init (BusConnection *connection)
 static void
 bus_connection_destroy (BusConnection *connection)
 {
-    GSList *name;
-
     if (connection->connection) {
         g_signal_handlers_disconnect_by_func (connection->connection,
                 G_CALLBACK (bus_connection_dbus_connection_closed_cb), connection);
+        g_object_set_qdata ((GObject *)connection->connection, BUS_CONNECTION_QUARK, NULL);
         g_object_unref (connection->connection);
         connection->connection = NULL;
     }
@@ -105,10 +94,37 @@ bus_connection_set_dbus_connection (BusConnection   *connection,
 {
     connection->connection = dbus_connection;
     g_object_ref (connection->connection);
-
+    g_object_set_qdata_full ((GObject *)dbus_connection,
+                             BUS_CONNECTION_QUARK,
+                             g_object_ref (connection),
+                             (GDestroyNotify)g_object_unref);
     g_signal_connect (connection->connection, "closed",
                 G_CALLBACK (bus_connection_dbus_connection_closed_cb), connection);
 }
+
+static GQuark
+bus_connection_quark (void)
+{
+    GQuark quark = 0;
+    if (quark == 0) {
+        quark = g_quark_from_static_string ("BUS_CONNECTION");
+    }
+    return quark;
+}
+
+BusConnection *
+bus_connection_lookup (GDBusConnection *dbus_connection)
+{
+    g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
+
+    BusConnection *connection = g_object_get_qdata ((GObject *)dbus_connection, BUS_CONNECTION_QUARK);
+    if (connection == NULL && !g_dbus_connection_is_closed (dbus_connection)) {
+        connection = BUS_CONNECTION (g_object_new (BUS_TYPE_CONNECTION, NULL));
+        bus_connection_set_dbus_connection (connection, dbus_connection);
+    }
+    return connection;
+}
+
 
 const gchar *
 bus_connection_get_unique_name (BusConnection   *connection)
@@ -183,5 +199,13 @@ gboolean
 bus_connection_remove_match (BusConnection  *connection,
                              const gchar    *rule)
 {
+    g_assert (BUS_IS_CONNECTION (connection));
     return FALSE;
+}
+
+GDBusConnection *
+bus_connection_get_dbus_connection (BusConnection *connection)
+{
+    g_assert (BUS_IS_CONNECTION (connection));
+    return connection->connection;
 }

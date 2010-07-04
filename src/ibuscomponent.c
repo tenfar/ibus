@@ -62,12 +62,12 @@ static void         ibus_component_parse_observed_paths
 G_DEFINE_TYPE (IBusComponent, ibus_component, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_component_class_init (IBusComponentClass *klass)
+ibus_component_class_init (IBusComponentClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
-    g_type_class_add_private (klass, sizeof (IBusComponentPrivate));
+    g_type_class_add_private (class, sizeof (IBusComponentPrivate));
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_component_destroy;
 

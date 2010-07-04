@@ -35,7 +35,7 @@ enum {
 // static guint            config_service_signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */
-static void      ibus_config_service_class_init      (IBusConfigServiceClass *klass);
+static void      ibus_config_service_class_init      (IBusConfigServiceClass *class);
 static void      ibus_config_service_init            (IBusConfigService      *config);
 static void      ibus_config_service_set_property    (IBusConfigService      *config,
                                                       guint                   prop_id,
@@ -109,28 +109,28 @@ static const gchar introspection_xml[] =
     "</node>";
 
 static void
-ibus_config_service_class_init (IBusConfigServiceClass *klass)
+ibus_config_service_class_init (IBusConfigServiceClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_config_service_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_config_service_get_property;
 
     IBUS_OBJECT_CLASS (gobject_class)->destroy = (IBusObjectDestroyFunc) ibus_config_service_destroy;
 
-    IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_config_service_service_method_call;
-    IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_config_service_service_get_property;
-    IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_config_service_service_set_property;
+    IBUS_SERVICE_CLASS (class)->service_method_call  = ibus_config_service_service_method_call;
+    IBUS_SERVICE_CLASS (class)->service_get_property = ibus_config_service_service_get_property;
+    IBUS_SERVICE_CLASS (class)->service_set_property = ibus_config_service_service_set_property;
 
-    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (class), introspection_xml);
 
-    klass->set_value   = ibus_config_service_set_value;
-    klass->get_value   = ibus_config_service_get_value;
-    klass->unset_value = ibus_config_service_unset_value;
+    class->set_value   = ibus_config_service_set_value;
+    class->get_value   = ibus_config_service_get_value;
+    class->unset_value = ibus_config_service_unset_value;
 
     /* install properties */
     /*
-     * g_type_class_add_private (klass, sizeof (IBusConfigServicePrivate));
+     * g_type_class_add_private (class, sizeof (IBusConfigServicePrivate));
      */
 }
 

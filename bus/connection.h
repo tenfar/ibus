@@ -63,8 +63,7 @@ struct _BusConnectionClass {
   /* class members */
 };
 
-GType            bus_connection_get_type            (void);
-BusConnection   *bus_connection_new                 (GDBusConnection    *connection);
+BusConnection   *bus_connection_lookup              (GDBusConnection    *connection);
 const gchar     *bus_connection_get_unique_name     (BusConnection      *connection);
 void             bus_connection_set_unique_name     (BusConnection      *connection,
                                                      const gchar        *name);
@@ -73,6 +72,8 @@ const gchar     *bus_connection_add_name            (BusConnection      *connect
                                                      const gchar        *name);
 gboolean         bus_connection_remove_name         (BusConnection      *connection,
                                                      const gchar        *name);
+GDBusConnection *bus_connection_get_dbus_connection (BusConnection      *connection);
+
 G_END_DECLS
 #endif
 

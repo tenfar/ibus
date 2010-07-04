@@ -23,7 +23,7 @@ test_configservice (void)
     IBusConfigService *config = ibus_config_service_new (ibus_bus_get_connection (bus));
     ibus_bus_request_name (bus, "test.config", 0);
 
-    run_loop_with_timeout (300000);
+    run_loop_with_timeout (1000);
 
     g_object_unref (config);
     g_object_unref (bus);

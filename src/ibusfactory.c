@@ -96,23 +96,23 @@ static const gchar introspection_xml[] =
     "</node>";
 
 static void
-ibus_factory_class_init (IBusFactoryClass *klass)
+ibus_factory_class_init (IBusFactoryClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
+    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (class);
 
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_factory_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_factory_get_property;
 
     ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_factory_destroy;
 
-    IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_factory_service_method_call;
-    IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_factory_service_get_property;
-    IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_factory_service_set_property;
+    IBUS_SERVICE_CLASS (class)->service_method_call  = ibus_factory_service_method_call;
+    IBUS_SERVICE_CLASS (class)->service_get_property = ibus_factory_service_get_property;
+    IBUS_SERVICE_CLASS (class)->service_set_property = ibus_factory_service_set_property;
 
-    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (class), introspection_xml);
 
-    g_type_class_add_private (klass, sizeof (IBusFactoryPrivate));
+    g_type_class_add_private (class, sizeof (IBusFactoryPrivate));
 }
 
 static void

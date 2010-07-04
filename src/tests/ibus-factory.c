@@ -23,7 +23,7 @@ test_factory (void)
     IBusFactory *factory = ibus_factory_new (ibus_bus_get_connection (bus));
     ibus_bus_request_name (bus, "test.factory", 0);
 
-    run_loop_with_timeout (3000);
+    run_loop_with_timeout (1000);
 
     g_object_unref (factory);
     g_object_unref (bus);

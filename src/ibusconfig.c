@@ -57,7 +57,7 @@ static BusPair  *bus_pair_new                   (GType                  car_type
 static BusPair  *bus_pair_copy                  (BusPair                *pair);
 static void      bus_pair_free                  (BusPair                *pair);
 #endif
-static void      ibus_config_class_init     (IBusConfigClass    *klass);
+static void      ibus_config_class_init     (IBusConfigClass    *class);
 static void      ibus_config_init           (IBusConfig         *config);
 static void      ibus_config_real_destroy   (IBusProxy          *proxy);
 
@@ -69,12 +69,12 @@ static void      ibus_config_g_signal       (GDBusProxy         *proxy,
 G_DEFINE_TYPE (IBusConfig, ibus_config, IBUS_TYPE_PROXY)
 
 static void
-ibus_config_class_init (IBusConfigClass *klass)
+ibus_config_class_init (IBusConfigClass *class)
 {
-    GDBusProxyClass *dbus_proxy_class = G_DBUS_PROXY_CLASS (klass);
-    IBusProxyClass *proxy_class = IBUS_PROXY_CLASS (klass);
+    GDBusProxyClass *dbus_proxy_class = G_DBUS_PROXY_CLASS (class);
+    IBusProxyClass *proxy_class = IBUS_PROXY_CLASS (class);
 
-    g_type_class_add_private (klass, sizeof (IBusConfigPrivate));
+    g_type_class_add_private (class, sizeof (IBusConfigPrivate));
 
     dbus_proxy_class->g_signal = ibus_config_g_signal;
     proxy_class->destroy = ibus_config_real_destroy;
@@ -93,7 +93,7 @@ ibus_config_class_init (IBusConfigClass *klass)
      */
     config_signals[VALUE_CHANGED] =
         g_signal_new (I_("value-changed"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,

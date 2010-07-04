@@ -451,13 +451,16 @@ bus_engine_proxy_new (const gchar    *path,
     g_assert (IBUS_IS_ENGINE_DESC (desc));
     g_assert (BUS_IS_CONNECTION (connection));
 
-    BusEngineProxy *engine;
-
-    engine = (BusEngineProxy *) g_object_new (BUS_TYPE_ENGINE_PROXY,
-                                              "name", NULL,
-                                              "path", path,
-                                              "connection", connection,
-                                              NULL);
+    BusEngineProxy *engine =
+        (BusEngineProxy *) g_initable_new (BUS_TYPE_ENGINE_PROXY,
+                                           NULL,
+                                           NULL,
+                                           "g-connection",     bus_connection_get_dbus_connection (connection),
+                                           "g-interface-name", IBUS_INTERFACE_ENGINE,
+                                           "g-object-path",    path,
+                                           NULL);
+    if (engine == NULL)
+        return NULL;
 
     engine->desc = desc;
     g_object_ref_sink (desc);
@@ -468,7 +471,6 @@ bus_engine_proxy_new (const gchar    *path,
     if (engine->keymap == NULL) {
         engine->keymap = ibus_keymap_get ("us");
     }
-
     return engine;
 }
 

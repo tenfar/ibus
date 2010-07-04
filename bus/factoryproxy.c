@@ -18,17 +18,52 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <dbus/dbus.h>
-#include <ibusinternal.h>
-#include <ibusmarshalers.h>
-#include "dbusimpl.h"
 #include "factoryproxy.h"
+#include <ibusinternal.h>
+#include "marshalers.h"
+#include "dbusimpl.h"
 #include "option.h"
 
 /* functions prototype */
 static void      bus_factory_proxy_destroy      (BusFactoryProxy        *factory);
 
 G_DEFINE_TYPE (BusFactoryProxy, bus_factory_proxy, IBUS_TYPE_PROXY)
+
+static void
+bus_factory_proxy_class_init (BusFactoryProxyClass *klass)
+{
+    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+
+    ibus_object_class->destroy = (IBusObjectDestroyFunc) bus_factory_proxy_destroy;
+}
+
+static void
+bus_factory_proxy_init (BusFactoryProxy *factory)
+{
+    factory->component = NULL;
+}
+
+static void
+bus_factory_proxy_destroy (BusFactoryProxy *factory)
+{
+    GList *p;
+
+    for (p = factory->engine_list; p != NULL ; p = p->next) {
+        IBusEngineDesc *desc = (IBusEngineDesc *)p->data;
+        g_object_steal_data ((GObject *)desc, "factory");
+        g_object_unref (desc);
+    }
+    g_list_free (factory->engine_list);
+    factory->engine_list = NULL;
+
+    if (factory->component) {
+        g_object_steal_data ((GObject *)factory->component, "factory");
+        g_object_unref (factory->component);
+        factory->component = NULL;
+    }
+
+    IBUS_OBJECT_CLASS(bus_factory_proxy_parent_class)->destroy (IBUS_OBJECT (factory));
+}
 
 BusFactoryProxy *
 bus_factory_proxy_new (IBusComponent *component,
@@ -68,41 +103,6 @@ bus_factory_proxy_new (IBusComponent *component,
     return factory;
 }
 
-static void
-bus_factory_proxy_class_init (BusFactoryProxyClass *klass)
-{
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
-
-    ibus_object_class->destroy = (IBusObjectDestroyFunc) bus_factory_proxy_destroy;
-}
-
-static void
-bus_factory_proxy_init (BusFactoryProxy *factory)
-{
-    factory->component = NULL;
-}
-
-static void
-bus_factory_proxy_destroy (BusFactoryProxy *factory)
-{
-    GList *p;
-
-    for (p = factory->engine_list; p != NULL ; p = p->next) {
-        IBusEngineDesc *desc = (IBusEngineDesc *)p->data;
-        g_object_steal_data ((GObject *)desc, "factory");
-        g_object_unref (desc);
-    }
-    g_list_free (factory->engine_list);
-    factory->engine_list = NULL;
-
-    if (factory->component) {
-        g_object_steal_data ((GObject *)factory->component, "factory");
-        g_object_unref (factory->component);
-        factory->component = NULL;
-    }
-
-    IBUS_OBJECT_CLASS(bus_factory_proxy_parent_class)->destroy (IBUS_OBJECT (factory));
-}
 
 IBusComponent *
 bus_factory_proxy_get_component (BusFactoryProxy *factory)

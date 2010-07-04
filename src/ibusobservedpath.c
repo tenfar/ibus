@@ -53,12 +53,12 @@ static gboolean  ibus_observed_path_parse_xml_node  (IBusObservedPath       *pat
 G_DEFINE_TYPE (IBusObservedPath, ibus_observed_path, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_observed_path_class_init (IBusObservedPathClass *klass)
+ibus_observed_path_class_init (IBusObservedPathClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
-    // g_type_class_add_private (klass, sizeof (IBusObservedPathPrivate));
+    // g_type_class_add_private (class, sizeof (IBusObservedPathPrivate));
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_observed_path_destroy;
 

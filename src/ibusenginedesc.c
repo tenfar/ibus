@@ -53,10 +53,10 @@ G_DEFINE_TYPE (IBusEngineDesc, ibus_engine_desc, IBUS_TYPE_SERIALIZABLE)
 
 
 static void
-ibus_engine_desc_class_init (IBusEngineDescClass *klass)
+ibus_engine_desc_class_init (IBusEngineDescClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_engine_desc_destroy;
 

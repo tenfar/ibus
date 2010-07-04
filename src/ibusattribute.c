@@ -32,9 +32,9 @@ static gboolean     ibus_attribute_copy         (IBusAttribute          *dest,
 G_DEFINE_TYPE (IBusAttribute, ibus_attribute, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_attribute_class_init (IBusAttributeClass *klass)
+ibus_attribute_class_init (IBusAttributeClass *class)
 {
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
     serializable_class->serialize   = (IBusSerializableSerializeFunc) ibus_attribute_serialize;
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_attribute_deserialize;

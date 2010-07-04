@@ -32,10 +32,10 @@ static gboolean     ibus_prop_list_copy         (IBusPropList       *dest,
 G_DEFINE_TYPE (IBusPropList, ibus_prop_list, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_prop_list_class_init (IBusPropListClass *klass)
+ibus_prop_list_class_init (IBusPropListClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_prop_list_destroy;
 

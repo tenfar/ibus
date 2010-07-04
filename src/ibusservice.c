@@ -47,9 +47,9 @@ static guint    service_signals[LAST_SIGNAL] = { 0 };
 */
 
 /* functions prototype */
-static void      ibus_service_base_init      (IBusServiceClass   *klass);
-static void      ibus_service_base_fini      (IBusServiceClass   *klass);
-static void      ibus_service_class_init     (IBusServiceClass   *klass);
+static void      ibus_service_base_init      (IBusServiceClass   *class);
+static void      ibus_service_base_fini      (IBusServiceClass   *class);
+static void      ibus_service_class_init     (IBusServiceClass   *class);
 static void      ibus_service_init           (IBusService        *service);
 static void      ibus_service_constructed    (GObject            *object);
 static void      ibus_service_set_property   (IBusService        *service,
@@ -160,22 +160,22 @@ ibus_service_get_type (void)
 }
 
 static void
-ibus_service_base_init (IBusServiceClass *klass)
+ibus_service_base_init (IBusServiceClass *class)
 {
-    GArray *old = klass->interfaces;
-    klass->interfaces = g_array_new (TRUE, TRUE, sizeof (GDBusInterfaceInfo *));
+    GArray *old = class->interfaces;
+    class->interfaces = g_array_new (TRUE, TRUE, sizeof (GDBusInterfaceInfo *));
     if (old != NULL) {
         GDBusInterfaceInfo **p = (GDBusInterfaceInfo **)old->data;
         while (*p != NULL) {
-            g_array_append_val (klass->interfaces, *p++);
+            g_array_append_val (class->interfaces, *p++);
         }
     }
 }
 
 static void
-ibus_service_base_fini (IBusServiceClass *klass)
+ibus_service_base_fini (IBusServiceClass *class)
 {
-    GDBusInterfaceInfo **interfaces = (GDBusInterfaceInfo **) g_array_free (klass->interfaces, FALSE);
+    GDBusInterfaceInfo **interfaces = (GDBusInterfaceInfo **) g_array_free (class->interfaces, FALSE);
     GDBusInterfaceInfo **p = interfaces;
     while (*p != NULL) {
         g_dbus_interface_info_unref (*p++);
@@ -191,12 +191,12 @@ static const gchar introspection_xml[] =
     "</node>";
 
 static void
-ibus_service_class_init (IBusServiceClass *klass)
+ibus_service_class_init (IBusServiceClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
+    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (class);
 
-    ibus_service_parent_class = IBUS_OBJECT_CLASS (g_type_class_peek_parent (klass));
+    ibus_service_parent_class = IBUS_OBJECT_CLASS (g_type_class_peek_parent (class));
 
     gobject_class->constructed  = ibus_service_constructed;
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_service_set_property;
@@ -204,12 +204,12 @@ ibus_service_class_init (IBusServiceClass *klass)
     ibus_object_class->destroy  = (IBusObjectDestroyFunc) ibus_service_destroy;
 
     /* virtual functions */
-    klass->service_method_call = ibus_service_service_method_call;
-    klass->service_get_property = ibus_service_service_get_property;
-    klass->service_set_property = ibus_service_service_set_property;
+    class->service_method_call = ibus_service_service_method_call;
+    class->service_get_property = ibus_service_service_get_property;
+    class->service_set_property = ibus_service_service_set_property;
 
     /* class members */
-    ibus_service_class_add_interfaces (klass, introspection_xml);
+    ibus_service_class_add_interfaces (class, introspection_xml);
 
     /* install properties */
     /**
@@ -251,7 +251,7 @@ ibus_service_class_init (IBusServiceClass *klass)
                         G_PARAM_STATIC_BLURB)
                     );
 
-    g_type_class_add_private (klass, sizeof (IBusServicePrivate));
+    g_type_class_add_private (class, sizeof (IBusServicePrivate));
 }
 
 static void
@@ -599,10 +599,10 @@ ibus_service_emit_signal (IBusService *service,
 }
 
 gboolean
-ibus_service_class_add_interfaces (IBusServiceClass   *klass,
+ibus_service_class_add_interfaces (IBusServiceClass   *class,
                                    const gchar        *xml_data)
 {
-    g_return_val_if_fail (IBUS_IS_SERVICE_CLASS (klass), FALSE);
+    g_return_val_if_fail (IBUS_IS_SERVICE_CLASS (class), FALSE);
     g_return_val_if_fail (xml_data != NULL, FALSE);
 
     GError *error = NULL;
@@ -616,7 +616,7 @@ ibus_service_class_add_interfaces (IBusServiceClass   *klass,
         GDBusInterfaceInfo **p = introspection_data->interfaces;
         while (*p != NULL) {
             g_dbus_interface_info_ref (*p);
-            g_array_append_val (klass->interfaces, *p);
+            g_array_append_val (class->interfaces, *p);
             p++;
         }
         // g_dbus_node_info_unref (introspection_data);

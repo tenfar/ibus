@@ -211,38 +211,38 @@ static const gchar introspection_xml[] =
     "</node>";
 
 static void
-ibus_engine_class_init (IBusEngineClass *klass)
+ibus_engine_class_init (IBusEngineClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
+    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (class);
 
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_engine_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_engine_get_property;
 
     ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_engine_destroy;
 
-    IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_engine_service_method_call;
-    IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_engine_service_get_property;
-    IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_engine_service_set_property;
+    IBUS_SERVICE_CLASS (class)->service_method_call  = ibus_engine_service_method_call;
+    IBUS_SERVICE_CLASS (class)->service_get_property = ibus_engine_service_get_property;
+    IBUS_SERVICE_CLASS (class)->service_set_property = ibus_engine_service_set_property;
 
-    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (klass), introspection_xml);
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (class), introspection_xml);
 
-    klass->process_key_event = ibus_engine_process_key_event;
-    klass->focus_in     = ibus_engine_focus_in;
-    klass->focus_out    = ibus_engine_focus_out;
-    klass->reset        = ibus_engine_reset;
-    klass->enable       = ibus_engine_enable;
-    klass->disable      = ibus_engine_disable;
-    klass->page_up      = ibus_engine_page_up;
-    klass->page_down    = ibus_engine_page_down;
-    klass->cursor_up    = ibus_engine_cursor_up;
-    klass->cursor_down  = ibus_engine_cursor_down;
-    klass->candidate_clicked    = ibus_engine_candidate_clicked;
-    klass->property_activate    = ibus_engine_property_activate;
-    klass->property_show        = ibus_engine_property_show;
-    klass->property_hide        = ibus_engine_property_hide;
-    klass->set_cursor_location  = ibus_engine_set_cursor_location;
-    klass->set_capabilities     = ibus_engine_set_capabilities;
+    class->process_key_event = ibus_engine_process_key_event;
+    class->focus_in     = ibus_engine_focus_in;
+    class->focus_out    = ibus_engine_focus_out;
+    class->reset        = ibus_engine_reset;
+    class->enable       = ibus_engine_enable;
+    class->disable      = ibus_engine_disable;
+    class->page_up      = ibus_engine_page_up;
+    class->page_down    = ibus_engine_page_down;
+    class->cursor_up    = ibus_engine_cursor_up;
+    class->cursor_down  = ibus_engine_cursor_down;
+    class->candidate_clicked    = ibus_engine_candidate_clicked;
+    class->property_activate    = ibus_engine_property_activate;
+    class->property_show        = ibus_engine_property_show;
+    class->property_hide        = ibus_engine_property_hide;
+    class->set_cursor_location  = ibus_engine_set_cursor_location;
+    class->set_capabilities     = ibus_engine_set_capabilities;
 
     /* install properties */
     /**
@@ -608,7 +608,7 @@ ibus_engine_class_init (IBusEngineClass *klass)
             1,
             G_TYPE_STRING);
 
-    g_type_class_add_private (klass, sizeof (IBusEnginePrivate));
+    g_type_class_add_private (class, sizeof (IBusEnginePrivate));
 }
 
 static void

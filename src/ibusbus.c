@@ -77,10 +77,10 @@ static GVariant *ibus_bus_call                  (IBusBus                *bus,
 G_DEFINE_TYPE (IBusBus, ibus_bus, IBUS_TYPE_OBJECT)
 
 static void
-ibus_bus_class_init (IBusBusClass *klass)
+ibus_bus_class_init (IBusBusClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
+    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (class);
 
     gobject_class->constructor = ibus_bus_constructor;
     ibus_object_class->destroy = ibus_bus_destroy;
@@ -95,7 +95,7 @@ ibus_bus_class_init (IBusBusClass *klass)
      */
     bus_signals[CONNECTED] =
         g_signal_new (I_("connected"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -112,7 +112,7 @@ ibus_bus_class_init (IBusBusClass *klass)
      */
     bus_signals[DISCONNECTED] =
         g_signal_new (I_("disconnected"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -129,7 +129,7 @@ ibus_bus_class_init (IBusBusClass *klass)
      */
     bus_signals[GLOBAL_ENGINE_CHANGED] =
         g_signal_new (I_("global-engine-changed"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -137,7 +137,7 @@ ibus_bus_class_init (IBusBusClass *klass)
             G_TYPE_NONE,
             0);
 
-    g_type_class_add_private (klass, sizeof (IBusBusPrivate));
+    g_type_class_add_private (class, sizeof (IBusBusPrivate));
 }
 #if 0
 static gboolean

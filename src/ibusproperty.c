@@ -33,10 +33,10 @@ static gboolean     ibus_property_copy          (IBusProperty       *dest,
 G_DEFINE_TYPE (IBusProperty, ibus_property, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_property_class_init (IBusPropertyClass *klass)
+ibus_property_class_init (IBusPropertyClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_property_destroy;
 

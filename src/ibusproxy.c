@@ -48,14 +48,14 @@ static void      ibus_proxy_connection_closed_cb
 G_DEFINE_TYPE (IBusProxy, ibus_proxy, G_TYPE_DBUS_PROXY)
 
 static void
-ibus_proxy_class_init (IBusProxyClass *klass)
+ibus_proxy_class_init (IBusProxyClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
     gobject_class->constructed = ibus_proxy_constructed;
     gobject_class->dispose = ibus_proxy_dispose;
 
-    klass->destroy = ibus_proxy_real_destroy;
+    class->destroy = ibus_proxy_real_destroy;
 
     /* install signals */
     /**

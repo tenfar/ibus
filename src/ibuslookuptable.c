@@ -32,10 +32,10 @@ static gboolean     ibus_lookup_table_copy          (IBusLookupTable        *des
 G_DEFINE_TYPE (IBusLookupTable, ibus_lookup_table, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_lookup_table_class_init (IBusLookupTableClass *klass)
+ibus_lookup_table_class_init (IBusLookupTableClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_lookup_table_destroy;
 

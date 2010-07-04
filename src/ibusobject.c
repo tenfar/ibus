@@ -54,15 +54,15 @@ static void      ibus_object_real_destroy   (IBusObject         *obj);
 G_DEFINE_TYPE (IBusObject, ibus_object, G_TYPE_INITIALLY_UNOWNED)
 
 static void
-ibus_object_class_init     (IBusObjectClass *klass)
+ibus_object_class_init     (IBusObjectClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
     gobject_class->constructor = ibus_object_constructor;
     gobject_class->dispose = (GObjectFinalizeFunc) ibus_object_dispose;
     gobject_class->finalize = (GObjectFinalizeFunc) ibus_object_finalize;
 
-    klass->destroy = ibus_object_real_destroy;
+    class->destroy = ibus_object_real_destroy;
 
     /* install signals */
     /**
@@ -84,7 +84,7 @@ ibus_object_class_init     (IBusObjectClass *klass)
             ibus_marshal_VOID__VOID,
             G_TYPE_NONE, 0);
 
-    g_type_class_add_private (klass, sizeof (IBusObjectPrivate));
+    g_type_class_add_private (class, sizeof (IBusObjectPrivate));
 
 #ifdef DEBUG_MEMORY
     _count_table = g_hash_table_new (g_direct_hash, g_direct_equal);

@@ -32,12 +32,12 @@ static gboolean     ibus_text_copy         (IBusText            *dest,
 G_DEFINE_TYPE (IBusText, ibus_text, IBUS_TYPE_SERIALIZABLE)
 
 static void
-ibus_text_class_init (IBusTextClass *klass)
+ibus_text_class_init (IBusTextClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
-    ibus_text_parent_class = (IBusSerializableClass *) g_type_class_peek_parent (klass);
+    ibus_text_parent_class = (IBusSerializableClass *) g_type_class_peek_parent (class);
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_text_destroy;
 

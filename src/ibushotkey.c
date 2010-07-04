@@ -64,7 +64,7 @@ static gboolean      ibus_hotkey_serialize          (IBusHotkey             *hot
 static gboolean      ibus_hotkey_deserialize        (IBusHotkey             *hotkey,
                                                      IBusMessageIter        *iter);
 */
-static void          ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *klass);
+static void          ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *class);
 static void          ibus_hotkey_profile_init       (IBusHotkeyProfile      *profile);
 static void          ibus_hotkey_profile_destroy    (IBusHotkeyProfile      *profile);
 static gboolean      ibus_hotkey_profile_serialize  (IBusHotkeyProfile      *profile,
@@ -201,14 +201,14 @@ ibus_hotkey_profile_get_type (void)
 }
 
 static void
-ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *klass)
+ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
-    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
+    IBusSerializableClass *serializable_class = IBUS_SERIALIZABLE_CLASS (class);
 
-    parent_class = (IBusSerializableClass *) g_type_class_peek_parent (klass);
+    parent_class = (IBusSerializableClass *) g_type_class_peek_parent (class);
 
-    g_type_class_add_private (klass, sizeof (IBusHotkeyProfilePrivate));
+    g_type_class_add_private (class, sizeof (IBusHotkeyProfilePrivate));
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_hotkey_profile_destroy;
 
@@ -216,7 +216,7 @@ ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *klass)
     serializable_class->deserialize = (IBusSerializableDeserializeFunc) ibus_hotkey_profile_deserialize;
     serializable_class->copy        = (IBusSerializableCopyFunc) ibus_hotkey_profile_copy;
 
-    klass->trigger = ibus_hotkey_profile_trigger;
+    class->trigger = ibus_hotkey_profile_trigger;
 
     /* install signals */
     /**
@@ -232,7 +232,7 @@ ibus_hotkey_profile_class_init (IBusHotkeyProfileClass *klass)
      */
     profile_signals[TRIGGER] =
         g_signal_new (I_("trigger"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
             G_STRUCT_OFFSET (IBusHotkeyProfileClass, trigger),
             NULL, NULL,

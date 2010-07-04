@@ -90,44 +90,44 @@ static void      ibus_panel_service_update_property       (IBusPanelService     
 G_DEFINE_TYPE (IBusPanelService, ibus_panel_service, IBUS_TYPE_SERVICE)
 
 static void
-ibus_panel_service_class_init (IBusPanelServiceClass *klass)
+ibus_panel_service_class_init (IBusPanelServiceClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
     gobject_class->set_property = (GObjectSetPropertyFunc) ibus_panel_service_set_property;
     gobject_class->get_property = (GObjectGetPropertyFunc) ibus_panel_service_get_property;
 
     IBUS_OBJECT_CLASS (gobject_class)->destroy = (IBusObjectDestroyFunc) ibus_panel_service_real_destroy;
 
-    IBUS_SERVICE_CLASS (klass)->service_method_call  = ibus_panel_service_service_method_call;
-    IBUS_SERVICE_CLASS (klass)->service_get_property = ibus_panel_service_service_get_property;
-    IBUS_SERVICE_CLASS (klass)->service_set_property = ibus_panel_service_service_set_property;
+    IBUS_SERVICE_CLASS (class)->service_method_call  = ibus_panel_service_service_method_call;
+    IBUS_SERVICE_CLASS (class)->service_get_property = ibus_panel_service_service_get_property;
+    IBUS_SERVICE_CLASS (class)->service_set_property = ibus_panel_service_service_set_property;
 
-    klass->focus_in              = ibus_panel_service_focus_in;
-    klass->focus_out             = ibus_panel_service_focus_out;
-    klass->register_properties   = ibus_panel_service_register_properties;
-    klass->set_cursor_location   = ibus_panel_service_set_cursor_location;
-    klass->update_lookup_table   = ibus_panel_service_update_lookup_table;
-    klass->update_auxiliary_text = ibus_panel_service_update_auxiliary_text;
-    klass->update_preedit_text   = ibus_panel_service_update_preedit_text;
-    klass->update_property       = ibus_panel_service_update_property;
+    class->focus_in              = ibus_panel_service_focus_in;
+    class->focus_out             = ibus_panel_service_focus_out;
+    class->register_properties   = ibus_panel_service_register_properties;
+    class->set_cursor_location   = ibus_panel_service_set_cursor_location;
+    class->update_lookup_table   = ibus_panel_service_update_lookup_table;
+    class->update_auxiliary_text = ibus_panel_service_update_auxiliary_text;
+    class->update_preedit_text   = ibus_panel_service_update_preedit_text;
+    class->update_property       = ibus_panel_service_update_property;
 
-    klass->cursor_down_lookup_table = ibus_panel_service_not_implemented;
-    klass->cursor_up_lookup_table   = ibus_panel_service_not_implemented;
-    klass->destroy                  = ibus_panel_service_not_implemented;
-    klass->hide_auxiliary_text      = ibus_panel_service_not_implemented;
-    klass->hide_language_bar        = ibus_panel_service_not_implemented;
-    klass->hide_lookup_table        = ibus_panel_service_not_implemented;
-    klass->hide_preedit_text        = ibus_panel_service_not_implemented;
-    klass->page_down_lookup_table   = ibus_panel_service_not_implemented;
-    klass->page_up_lookup_table     = ibus_panel_service_not_implemented;
-    klass->reset                    = ibus_panel_service_not_implemented;
-    klass->show_auxiliary_text      = ibus_panel_service_not_implemented;
-    klass->show_language_bar        = ibus_panel_service_not_implemented;
-    klass->show_lookup_table        = ibus_panel_service_not_implemented;
-    klass->show_preedit_text        = ibus_panel_service_not_implemented;
-    klass->start_setup              = ibus_panel_service_not_implemented;
-    klass->state_changed            = ibus_panel_service_not_implemented;
+    class->cursor_down_lookup_table = ibus_panel_service_not_implemented;
+    class->cursor_up_lookup_table   = ibus_panel_service_not_implemented;
+    class->destroy                  = ibus_panel_service_not_implemented;
+    class->hide_auxiliary_text      = ibus_panel_service_not_implemented;
+    class->hide_language_bar        = ibus_panel_service_not_implemented;
+    class->hide_lookup_table        = ibus_panel_service_not_implemented;
+    class->hide_preedit_text        = ibus_panel_service_not_implemented;
+    class->page_down_lookup_table   = ibus_panel_service_not_implemented;
+    class->page_up_lookup_table     = ibus_panel_service_not_implemented;
+    class->reset                    = ibus_panel_service_not_implemented;
+    class->show_auxiliary_text      = ibus_panel_service_not_implemented;
+    class->show_language_bar        = ibus_panel_service_not_implemented;
+    class->show_lookup_table        = ibus_panel_service_not_implemented;
+    class->show_preedit_text        = ibus_panel_service_not_implemented;
+    class->start_setup              = ibus_panel_service_not_implemented;
+    class->state_changed            = ibus_panel_service_not_implemented;
 
     /* install properties */
     #if 0

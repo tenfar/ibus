@@ -39,7 +39,7 @@ static guint dbus_signals[LAST_SIGNAL] = { 0 };
 static void     bus_dbus_impl_destroy           (BusDBusImpl        *dbus);
 static void     bus_dbus_impl_service_method_call
                                                 (IBusService        *service,
-                                                 GDBusConnection    *connection,
+                                                 GDBusConnection    *dbus_connection,
                                                  const gchar        *sender,
                                                  const gchar        *object_path,
                                                  const gchar        *interface_name,
@@ -77,23 +77,106 @@ static void     _rule_destroy_cb                (BusMatchRule       *rule,
 
 G_DEFINE_TYPE(BusDBusImpl, bus_dbus_impl, IBUS_TYPE_SERVICE)
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.DBus'>"
+    "    <method name='Hello'>"
+    "      <arg direction='out' type='s' name='unique_name' />"
+    "    </method>"
+    "    <method name='RequestName'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='in'  type='u' name='flags' />"
+    "      <arg direction='out' type='u' />"
+    "    </method>"
+    "    <method name='ReleaseName'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='out' type='u' />"
+    "    </method>"
+    "    <method name='StartServiceByName'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='in'  type='u' />"
+    "      <arg direction='out' type='u' />"
+    "    </method>"
+    "    <method name='UpdateActivationEnvironment'>"
+    "      <arg direction='in' type='a{ss}'/>"
+    "    </method>"
+    "    <method name='NameHasOwner'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='out' type='b' />"
+    "    </method>"
+    "    <method name='ListNames'>"
+    "      <arg direction='out' type='as' />"
+    "    </method>"
+    "    <method name='ListActivatableNames'>"
+    "      <arg direction='out' type='as' />"
+    "    </method>"
+    "    <method name='AddMatch'>"
+    "      <arg direction='in'  type='s' name='match_rule' />"
+    "    </method>"
+    "    <method name='RemoveMatch'>"
+    "      <arg direction='in'  type='s' name='match_rule' />"
+    "    </method>"
+    "    <method name='GetNameOwner'>"
+    "      <arg direction='in'  type='s' name='name' />"
+    "      <arg direction='out' type='s' name='unique_name' />"
+    "    </method>"
+    "    <method name='ListQueuedOwners'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='out' type='as' />"
+    "    </method>"
+    "    <method name='GetConnectionUnixUser'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='out' type='u' />"
+    "    </method>"
+    "    <method name='GetConnectionUnixProcessID'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='out' type='u' />"
+    "    </method>"
+    "    <method name='GetAdtAuditSessionData'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='out' type='ay' />"
+    "    </method>"
+    "    <method name='GetConnectionSELinuxSecurityContext'>"
+    "      <arg direction='in'  type='s' />"
+    "      <arg direction='out' type='ay' />"
+    "    </method>"
+    "    <method name='ReloadConfig' />"
+    "    <method name='GetId'>"
+    "      <arg direction='out' type='s' />"
+    "    </method>"
+    "    <signal name='NameOwnerChanged'>"
+    "      <arg type='s' name='name' />"
+    "      <arg type='s' name='old_owner' />"
+    "      <arg type='s' name='new_owner' />"
+    "    </signal>"
+    "    <signal name='NameLost'>"
+    "      <arg type='s' name='name' />"
+    "    </signal>"
+    "    <signal name='NameAcquired'>"
+    "      <arg type='s' name='name' />"
+    "    </signal>"
+    "  </interface>"
+    "</node>";
+
 static void
-bus_dbus_impl_class_init (BusDBusImplClass *klass)
+bus_dbus_impl_class_init (BusDBusImplClass *class)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
     IBUS_OBJECT_CLASS (gobject_class)->destroy = (IBusObjectDestroyFunc) bus_dbus_impl_destroy;
 
-    IBUS_SERVICE_CLASS (klass)->service_method_call =  bus_dbus_impl_service_method_call;
-    IBUS_SERVICE_CLASS (klass)->service_get_property = bus_dbus_impl_service_get_property;
-    IBUS_SERVICE_CLASS (klass)->service_set_property = bus_dbus_impl_service_set_property;
+    IBUS_SERVICE_CLASS (class)->service_method_call =  bus_dbus_impl_service_method_call;
+    IBUS_SERVICE_CLASS (class)->service_get_property = bus_dbus_impl_service_get_property;
+    IBUS_SERVICE_CLASS (class)->service_set_property = bus_dbus_impl_service_set_property;
 
-    klass->name_owner_changed = bus_dbus_impl_name_owner_changed;
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (class), introspection_xml);
+
+    class->name_owner_changed = bus_dbus_impl_name_owner_changed;
 
     /* install signals */
     dbus_signals[NAME_OWNER_CHANGED] =
         g_signal_new (I_("name-owner-changed"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_FIRST,
             G_STRUCT_OFFSET (BusDBusImplClass, name_owner_changed),
             NULL, NULL,
@@ -155,118 +238,6 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
 
 /* FIXME */
 #if 0
-/* introspectable interface */
-static IBusMessage *
-_dbus_introspect (BusDBusImpl     *dbus,
-                  IBusMessage     *message,
-                  BusConnection   *connection)
-{
-    static const gchar *introspect =
-        DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
-        "<node>\n"
-        "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
-        "    <method name=\"Introspect\">\n"
-        "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-        "  </interface>\n"
-        "  <interface name=\"org.freedesktop.DBus\">\n"
-        "    <method name=\"Hello\">\n"
-        "      <arg direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <method name=\"RequestName\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"in\" type=\"u\"/>\n"
-        "      <arg direction=\"out\" type=\"u\"/>\n"
-        "    </method>\n"
-        "    <method name=\"ReleaseName\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"u\"/>\n"
-        "    </method>\n"
-#if 0
-        "    <method name=\"StartServiceByName\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"in\" type=\"u\"/>\n"
-        "      <arg direction=\"out\" type=\"u\"/>\n"
-        "    </method>\n"
-        "    <method name=\"UpdateActivationEnvironment\">\n"
-        "      <arg direction=\"in\" type=\"a{ss}\"/>\n"
-        "    </method>\n"
-#endif
-        "    <method name=\"NameHasOwner\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"b\"/>\n"
-        "    </method>\n"
-        "    <method name=\"ListNames\">\n"
-        "      <arg direction=\"out\" type=\"as\"/>\n"
-        "    </method>\n"
-#if 0
-        "    <method name=\"ListActivatableNames\">\n"
-        "      <arg direction=\"out\" type=\"as\"/>\n"
-        "    </method>\n"
-#endif
-        "    <method name=\"AddMatch\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <method name=\"RemoveMatch\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetNameOwner\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-#if 0
-        "    <method name=\"ListQueuedOwners\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"as\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetConnectionUnixUser\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"u\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetConnectionUnixProcessID\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"u\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetAdtAuditSessionData\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"ay\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetConnectionSELinuxSecurityContext\">\n"
-        "      <arg direction=\"in\" type=\"s\"/>\n"
-        "      <arg direction=\"out\" type=\"ay\"/>\n"
-        "    </method>\n"
-        "    <method name=\"ReloadConfig\">\n"
-        "    </method>\n"
-#endif
-        "    <method name=\"GetId\">\n"
-        "      <arg direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <signal name=\"NameOwnerChanged\">\n"
-        "      <arg type=\"s\"/>\n"
-        "      <arg type=\"s\"/>\n"
-        "      <arg type=\"s\"/>\n"
-        "    </signal>\n"
-#if 0
-        "    <signal name=\"NameLost\">\n"
-        "      <arg type=\"s\"/>\n"
-        "    </signal>\n"
-        "    <signal name=\"NameAcquired\">\n"
-        "      <arg type=\"s\"/>\n"
-        "    </signal>\n"
-#endif
-        "  </interface>\n"
-        "</node>\n";
-
-    IBusMessage *reply_message;
-    reply_message = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply_message,
-                              G_TYPE_STRING, &introspect,
-                              G_TYPE_INVALID);
-
-    return reply_message;
-}
-
-
 /* dbus interface */
 static IBusMessage *
 _dbus_no_implement (BusDBusImpl     *dbus,
@@ -688,15 +659,21 @@ _dbus_release_name (BusDBusImpl     *dbus,
     return reply_message;
 }
 
+static GQuark
+bus_connec
 
-static gboolean
-bus_dbus_impl_ibus_message (BusDBusImpl  *dbus,
-                            BusConnection   *connection,
-                            IBusMessage     *message)
+static void
+bus_dbus_impl_service_method_call (IBusService           *service,
+                                   GDBusConnection       *dbus_connection,
+                                   const gchar           *sender,
+                                   const gchar           *object_path,
+                                   const gchar           *interface_name,
+                                   const gchar           *method_name,
+                                   GVariant              *parameters,
+                                   GDBusMethodInvocation *invocation)
 {
-    g_assert (BUS_IS_DBUS_IMPL (dbus));
-    g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (message != NULL);
+    BusDBusImpl *dbus = BUS_DBUS_IMPL (service);
+    BusConnection *connection = g_object_get_qdata (dbus_connection, BUS_CONNECTION_QUARK);
 
     gint i;
     IBusMessage *reply_message = NULL;

@@ -72,11 +72,11 @@ static void     ibus_input_context_g_signal     (GDBusProxy             *proxy,
 G_DEFINE_TYPE (IBusInputContext, ibus_input_context, IBUS_TYPE_PROXY)
 
 static void
-ibus_input_context_class_init (IBusInputContextClass *klass)
+ibus_input_context_class_init (IBusInputContextClass *class)
 {
-    GDBusProxyClass *g_dbus_proxy_class = G_DBUS_PROXY_CLASS (klass);
+    GDBusProxyClass *g_dbus_proxy_class = G_DBUS_PROXY_CLASS (class);
 
-    g_type_class_add_private (klass, sizeof (IBusInputContextPrivate));
+    g_type_class_add_private (class, sizeof (IBusInputContextPrivate));
 
     g_dbus_proxy_class->g_signal = ibus_input_context_g_signal;
 
@@ -89,7 +89,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[ENABLED] =
         g_signal_new (I_("enabled"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -104,7 +104,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[DISABLED] =
         g_signal_new (I_("disabled"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -124,7 +124,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[COMMIT_TEXT] =
         g_signal_new (I_("commit-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -144,7 +144,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[FORWARD_KEY_EVENT] =
         g_signal_new (I_("forward-key-event"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -166,7 +166,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[DELETE_SURROUNDING_TEXT] =
         g_signal_new (I_("delete-surrounding-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -191,7 +191,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[UPDATE_PREEDIT_TEXT] =
         g_signal_new (I_("update-preedit-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -210,7 +210,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[SHOW_PREEDIT_TEXT] =
         g_signal_new (I_("show-preedit-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -225,7 +225,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[HIDE_PREEDIT_TEXT] =
         g_signal_new (I_("hide-preedit-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -244,7 +244,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[UPDATE_AUXILIARY_TEXT] =
         g_signal_new (I_("update-auxiliary-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -261,7 +261,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[SHOW_AUXILIARY_TEXT] =
         g_signal_new (I_("show-auxiliary-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -276,7 +276,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[HIDE_AUXILIARY_TEXT] =
         g_signal_new (I_("hide-auxiliary-text"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -297,7 +297,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[UPDATE_LOOKUP_TABLE] =
         g_signal_new (I_("update-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -314,7 +314,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[SHOW_LOOKUP_TABLE] =
         g_signal_new (I_("show-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -329,7 +329,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[HIDE_LOOKUP_TABLE] =
         g_signal_new (I_("hide-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -344,7 +344,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[PAGE_UP_LOOKUP_TABLE] =
         g_signal_new (I_("page-up-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -359,7 +359,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[PAGE_DOWN_LOOKUP_TABLE] =
         g_signal_new (I_("page-down-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -374,7 +374,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[CURSOR_UP_LOOKUP_TABLE] =
         g_signal_new (I_("cursor-up-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -389,7 +389,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[CURSOR_DOWN_LOOKUP_TABLE] =
         g_signal_new (I_("cursor-down-lookup-table"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -410,7 +410,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[REGISTER_PROPERTIES] =
         g_signal_new (I_("register-properties"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
@@ -432,7 +432,7 @@ ibus_input_context_class_init (IBusInputContextClass *klass)
      */
     context_signals[UPDATE_PROPERTY] =
         g_signal_new (I_("update-property"),
-            G_TYPE_FROM_CLASS (klass),
+            G_TYPE_FROM_CLASS (class),
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,

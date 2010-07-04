@@ -35,9 +35,9 @@ struct _IBusSerializablePrivate {
 // static guint    object_signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */
-static void      ibus_serializable_base_init        (IBusSerializableClass  *klass);
-static void      ibus_serializable_base_fini        (IBusSerializableClass  *klass);
-static void      ibus_serializable_class_init       (IBusSerializableClass  *klass);
+static void      ibus_serializable_base_init        (IBusSerializableClass  *class);
+static void      ibus_serializable_base_fini        (IBusSerializableClass  *class);
+static void      ibus_serializable_class_init       (IBusSerializableClass  *class);
 static void      ibus_serializable_init             (IBusSerializable       *object);
 static void      ibus_serializable_destroy          (IBusSerializable       *object);
 static gboolean  ibus_serializable_real_serialize   (IBusSerializable       *object,
@@ -83,29 +83,29 @@ ibus_serializable_new (void)
 }
 
 static void
-ibus_serializable_base_init     (IBusSerializableClass *klass)
+ibus_serializable_base_init     (IBusSerializableClass *class)
 {
 }
 
 static void
-ibus_serializable_base_fini     (IBusSerializableClass *klass)
+ibus_serializable_base_fini     (IBusSerializableClass *class)
 {
 }
 
 static void
-ibus_serializable_class_init     (IBusSerializableClass *klass)
+ibus_serializable_class_init     (IBusSerializableClass *class)
 {
-    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (klass);
+    IBusObjectClass *object_class = IBUS_OBJECT_CLASS (class);
 
-    parent_class = (IBusObjectClass *) g_type_class_peek_parent (klass);
+    parent_class = (IBusObjectClass *) g_type_class_peek_parent (class);
 
-    g_type_class_add_private (klass, sizeof (IBusSerializablePrivate));
+    g_type_class_add_private (class, sizeof (IBusSerializablePrivate));
 
     object_class->destroy = (IBusObjectDestroyFunc) ibus_serializable_destroy;
 
-    klass->serialize = ibus_serializable_real_serialize;
-    klass->deserialize = ibus_serializable_real_deserialize;
-    klass->copy = ibus_serializable_real_copy;
+    class->serialize = ibus_serializable_real_serialize;
+    class->deserialize = ibus_serializable_real_deserialize;
+    class->copy = ibus_serializable_real_copy;
 }
 
 static void

@@ -369,7 +369,7 @@ bus_dbus_impl_get_id (BusDBusImpl           *dbus,
 }
 
 static void
-dbus_impl_rule_destroy_cb (BusMatchRule *rule,
+bus_dbus_impl_rule_destroy_cb (BusMatchRule *rule,
                            BusDBusImpl  *dbus)
 {
     dbus->rules = g_slist_remove (dbus->rules, rule);
@@ -406,7 +406,7 @@ bus_dbus_impl_add_match (BusDBusImpl           *dbus,
     if (rule) {
         bus_match_rule_add_recipient (rule, connection);
         dbus->rules = g_slist_append (dbus->rules, rule);
-        g_signal_connect (rule, "destroy", G_CALLBACK (dbus_impl_rule_destroy_cb), dbus);
+        g_signal_connect (rule, "destroy", G_CALLBACK (bus_dbus_impl_rule_destroy_cb), dbus);
     }
 }
 
@@ -438,52 +438,43 @@ bus_dbus_impl_remove_match (BusDBusImpl           *dbus,
     g_object_unref (rule);
 }
 
-#if 0
-static IBusMessage *
-_dbus_request_name (BusDBusImpl     *dbus,
-                    IBusMessage     *message,
-                    BusConnection   *connection)
+static void
+bus_dbus_impl_request_name (BusDBusImpl           *dbus,
+                            BusConnection         *connection,
+                            GVariant              *parameters,
+                            GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply_message;
-    IBusError *error;
-    gchar *name;
-    guint flags;
-    guint retval;
+    /* FIXME need to handle flags */
+    const gchar *name = NULL;
+    guint flags = 0;
+    g_variant_get (parameters, "(&su)", &name, &flags);
 
-    if (!ibus_message_get_args (message,
-                                &error,
-                                G_TYPE_STRING, &name,
-                                G_TYPE_UINT, &flags,
-                                G_TYPE_INVALID)) {
-        reply_message = ibus_message_new_error (message,
-                                                error->name,
-                                                error->message);
-        ibus_error_free (error);
-        return reply_message;
+    if (name[0] == ':' || !g_dbus_is_name (name)) {
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                        "'%s' is not a legal service name.", name);
+        return;
     }
 
-    if (g_strcmp0 (name, DBUS_SERVICE_DBUS) == 0 ||
-        g_strcmp0 (name, IBUS_SERVICE_IBUS) == 0 ||
-        g_hash_table_lookup (dbus->names, name) != NULL) {
-        reply_message = ibus_message_new_error_printf (message,
-                                                       DBUS_ERROR_FAILED,
-                                                       "Name %s has owner",
-                                                       name);
-        return reply_message;
+    if (g_strcmp0 (name, "org.freedesktop.DBus") == 0 ||
+        g_strcmp0 (name, "org.freedesktop.IBus") == 0) {
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                        "Can not acquire the service name '%s', it is reserved by IBus", name);
+        return;
     }
 
-    retval = 1;
+    if (g_hash_table_lookup (dbus->names, name) != NULL) {
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Service name '%s' already has an owner.", name);
+        return;
+    }
+
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(u)", 1));
     g_hash_table_insert (dbus->names,
                          (gpointer )bus_connection_add_name (connection, name),
                          connection);
-    reply_message = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply_message,
-                              G_TYPE_UINT, &retval,
-                              G_TYPE_INVALID);
-
-    ibus_connection_send ((IBusConnection *) connection, reply_message);
-    ibus_message_unref (reply_message);
-    ibus_connection_flush ((IBusConnection *) connection);
 
     g_signal_emit (dbus,
                    dbus_signals[NAME_OWNER_CHANGED],
@@ -491,47 +482,46 @@ _dbus_request_name (BusDBusImpl     *dbus,
                    name,
                    "",
                    bus_connection_get_unique_name (connection));
-
-    return NULL;
 }
 
-static IBusMessage *
-_dbus_release_name (BusDBusImpl     *dbus,
-                    IBusMessage     *message,
-                    BusConnection   *connection)
+static void
+bus_dbus_impl_release_name (BusDBusImpl           *dbus,
+                            BusConnection         *connection,
+                            GVariant              *parameters,
+                            GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply_message;
-    IBusError *error;
-    gchar *name;
+    const gchar *name= NULL;
+    g_variant_get (parameters, "(&s)", &name);
+
+    if (name[0] == ':' || !g_dbus_is_name (name)) {
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                        "'%s' is not a legal service name.", name);
+        return;
+    }
+
+    if (g_strcmp0 (name, "org.freedesktop.DBus") == 0 ||
+        g_strcmp0 (name, "org.freedesktop.IBus") == 0) {
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                        "Service name '%s' is owned by bus.", name);
+        return;
+    }
+
     guint retval;
-
-    if (!ibus_message_get_args (message,
-                                &error,
-                                G_TYPE_STRING, &name,
-                                G_TYPE_INVALID)) {
-        reply_message = ibus_message_new_error (message,
-                                                error->name,
-                                                error->message);
-        ibus_error_free (error);
-        return reply_message;
-    }
-
-    reply_message = ibus_message_new_method_return (message);
-    if (bus_connection_remove_name (connection, name)) {
-        retval = 1;
-    }
-    else {
+    if (g_hash_table_lookup (dbus->names, name) == NULL) {
         retval = 2;
     }
-
-    ibus_message_append_args (message,
-                              G_TYPE_UINT, &retval,
-                              G_TYPE_INVALID);
-
-    return reply_message;
+    else {
+        if (bus_connection_remove_name (connection, name)) {
+            retval = 1;
+        }
+        else {
+            retval = 3;
+        }
+    }
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(u)", retval));
 }
-
-#endif
 
 static void
 bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
@@ -603,6 +593,8 @@ bus_dbus_impl_service_method_call (IBusService           *service,
         { "GetId",          bus_dbus_impl_get_id },
         { "AddMatch",       bus_dbus_impl_add_match },
         { "RemoveMatch",    bus_dbus_impl_remove_match },
+        { "RequestName",    bus_dbus_impl_request_name },
+        { "ReleaseName",    bus_dbus_impl_release_name },
     };
 
     gint i;

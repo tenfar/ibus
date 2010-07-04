@@ -57,12 +57,6 @@ typedef enum {
     MATCH_ARGS          = 1 << 6,
 } BusMatchFlags;
 
-typedef struct _BusRecipient BusRecipient;
-struct _BusRecipient {
-    GDBusConnection *connection;
-    gint refcount;
-};
-
 struct _BusMatchRule {
     IBusObject parent;
     /* instance members */
@@ -74,7 +68,7 @@ struct _BusMatchRule {
     gchar *destination;
     gchar *path;
     GArray *args;
-    GList  *recipients;
+    GList *recipients;
 };
 
 struct _BusMatchRuleClass {
@@ -111,10 +105,10 @@ gboolean         bus_match_rule_is_equal    (BusMatchRule       *a,
                                              BusMatchRule       *b);
 void             bus_match_rule_add_recipient
                                             (BusMatchRule       *rule,
-                                             GDBusConnection    *connection);
+                                             BusConnection      *connection);
 void             bus_match_rule_remove_recipient
                                             (BusMatchRule       *rule,
-                                             GDBusConnection    *connection);
+                                             BusConnection      *connection);
 GList           *bus_match_rule_get_recipients
                                             (BusMatchRule   *rule,
                                              GDBusMessage   *message);

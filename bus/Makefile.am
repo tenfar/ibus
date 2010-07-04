@@ -94,6 +94,7 @@ ibus_daemon_SOURCES = \
 	matchrule.c \
 	marshalers.c \
 	connection.c \
+	engineproxy.c \
 	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \

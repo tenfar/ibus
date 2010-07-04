@@ -236,54 +236,24 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
     IBUS_OBJECT_CLASS(bus_dbus_impl_parent_class)->destroy ((IBusObject *)dbus);
 }
 
-/* FIXME */
-#if 0
-/* dbus interface */
-static IBusMessage *
-_dbus_no_implement (BusDBusImpl     *dbus,
-                    IBusMessage     *message,
-                    BusConnection   *connection)
+static void
+bus_dbus_impl_hello (BusDBusImpl           *dbus,
+                     BusConnection         *connection,
+                     GVariant              *parameters,
+                     GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply_message;
-    reply_message = ibus_message_new_error_printf (message,
-                                                   DBUS_ERROR_UNKNOWN_METHOD,
-                                                   "IBus does not support %s.",
-                                                   ibus_message_get_member (message));
-    return reply_message;
-}
-
-
-static IBusMessage *
-_dbus_hello (BusDBusImpl    *dbus,
-             IBusMessage    *message,
-             BusConnection  *connection)
-{
-    IBusMessage *reply_message;
-
     if (bus_connection_get_unique_name (connection) != NULL) {
-        reply_message = ibus_message_new_error (message,
-                                                DBUS_ERROR_FAILED,
-                                                "Already handled an Hello message");
+        g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Already handled an Hello message");
     }
     else {
-        gchar *name;
-
-        name = g_strdup_printf (":1.%d", dbus->id ++);
+        gchar *name = g_strdup_printf (":1.%d", dbus->id ++);
         bus_connection_set_unique_name (connection, name);
         g_free (name);
 
         name = (gchar *) bus_connection_get_unique_name (connection);
         g_hash_table_insert (dbus->unique_names, name, connection);
-
-        reply_message = ibus_message_new_method_return (message);
-        ibus_message_append_args (reply_message,
-                                  G_TYPE_STRING, &name,
-                                  G_TYPE_INVALID);
-
-        ibus_connection_send ((IBusConnection *) connection, reply_message);
-        ibus_message_unref (reply_message);
-        ibus_connection_flush ((IBusConnection *) connection);
-        reply_message = NULL;
+        g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", name));
 
         g_signal_emit (dbus,
                        dbus_signals[NAME_OWNER_CHANGED],
@@ -291,12 +261,10 @@ _dbus_hello (BusDBusImpl    *dbus,
                        name,
                        "",
                        name);
-
     }
-
-    return reply_message;
 }
 
+#if 0
 static IBusMessage *
 _dbus_list_names (BusDBusImpl       *dbus,
                   IBusMessage       *message,
@@ -659,84 +627,6 @@ _dbus_release_name (BusDBusImpl     *dbus,
     return reply_message;
 }
 
-static GQuark
-bus_connec
-
-static void
-bus_dbus_impl_service_method_call (IBusService           *service,
-                                   GDBusConnection       *dbus_connection,
-                                   const gchar           *sender,
-                                   const gchar           *object_path,
-                                   const gchar           *interface_name,
-                                   const gchar           *method_name,
-                                   GVariant              *parameters,
-                                   GDBusMethodInvocation *invocation)
-{
-    BusDBusImpl *dbus = BUS_DBUS_IMPL (service);
-    BusConnection *connection = g_object_get_qdata (dbus_connection, BUS_CONNECTION_QUARK);
-
-    gint i;
-    IBusMessage *reply_message = NULL;
-
-    static const struct {
-        const gchar *interface;
-        const gchar *name;
-        IBusMessage *(* handler) (BusDBusImpl *, IBusMessage *, BusConnection *);
-    } handlers[] =  {
-        /* Introspectable interface */
-        { DBUS_INTERFACE_INTROSPECTABLE,
-                               "Introspect", _dbus_introspect },
-        /* DBus interface */
-        { DBUS_INTERFACE_DBUS, "Hello",     _dbus_hello },
-        { DBUS_INTERFACE_DBUS, "ListNames", _dbus_list_names },
-        { DBUS_INTERFACE_DBUS, "ListActivatableNames",
-                                            _dbus_no_implement },
-        { DBUS_INTERFACE_DBUS, "NameHasOwner",
-                                            _dbus_name_has_owner },
-        { DBUS_INTERFACE_DBUS, "StartServiceByName",
-                                            _dbus_no_implement },
-        { DBUS_INTERFACE_DBUS, "GetNameOwner",
-                                            _dbus_get_name_owner },
-        { DBUS_INTERFACE_DBUS, "GetConnectionUnixUser",
-                                            _dbus_no_implement },
-        { DBUS_INTERFACE_DBUS, "AddMatch",  _dbus_add_match },
-        { DBUS_INTERFACE_DBUS, "RemoveMatch",
-                                            _dbus_remove_match },
-        { DBUS_INTERFACE_DBUS, "GetId",     _dbus_get_id },
-        { DBUS_INTERFACE_DBUS, "RequestName", _dbus_request_name },
-        { DBUS_INTERFACE_DBUS, "ReleaseName", _dbus_release_name },
-        { NULL, NULL, NULL }
-    };
-
-    ibus_message_set_destination (message, DBUS_SERVICE_DBUS);
-
-    for (i = 0; handlers[i].interface != NULL; i++) {
-        if (ibus_message_is_method_call (message,
-                                         handlers[i].interface,
-                                         handlers[i].name)) {
-
-            reply_message = handlers[i].handler (dbus, message, connection);
-            if (reply_message) {
-
-                ibus_message_set_sender (reply_message, DBUS_SERVICE_DBUS);
-                ibus_message_set_destination (reply_message,
-                                              bus_connection_get_unique_name (connection));
-                ibus_message_set_no_reply (reply_message, TRUE);
-
-                ibus_connection_send (IBUS_CONNECTION (connection), reply_message);
-                ibus_message_unref (reply_message);
-            }
-
-            g_signal_stop_emission_by_name (dbus, "ibus-message");
-            return TRUE;
-        }
-    }
-
-    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->ibus_message (
-                                (IBusService *) dbus,
-                                (IBusConnection *) connection,
-                                message);
-}
 #endif
 
 static void
@@ -769,6 +659,56 @@ bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
 #endif
 }
 
+static void
+bus_dbus_impl_service_method_call (IBusService           *service,
+                                   GDBusConnection       *dbus_connection,
+                                   const gchar           *sender,
+                                   const gchar           *object_path,
+                                   const gchar           *interface_name,
+                                   const gchar           *method_name,
+                                   GVariant              *parameters,
+                                   GDBusMethodInvocation *invocation)
+{
+    BusDBusImpl *dbus = BUS_DBUS_IMPL (service);
+
+    BusConnection *connection = bus_connection_lookup (dbus_connection);
+    g_assert (BUS_IS_CONNECTION (connection));
+
+    if (g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0) {
+        IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->service_method_call (
+                                        (IBusService *) dbus,
+                                        dbus_connection,
+                                        sender,
+                                        object_path,
+                                        interface_name,
+                                        method_name,
+                                        parameters,
+                                        invocation);
+        return;
+    }
+
+    static const struct {
+        const gchar *method_name;
+        void (* method) (BusDBusImpl *, BusConnection *, GVariant *, GDBusMethodInvocation *);
+    } methods[] =  {
+        /* DBus interface */
+        { "Hello",     bus_dbus_impl_hello },
+    };
+
+    gint i;
+    for (i = 0; G_N_ELEMENTS (methods); i++) {
+        if (g_strcmp0 (method_name, methods[i].method_name) == 0) {
+            methods[i].method (dbus, connection, parameters, invocation);
+            return;
+        }
+    }
+
+    /* unsupport methods */
+    g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+                    "org.freedesktop.DBus does not support %s", method_name);
+}
+
+#if 0
 static void
 bus_dbus_impl_service_method_call (IBusService           *service,
                                    GDBusConnection       *connection,
@@ -874,7 +814,7 @@ bus_dbus_impl_service_method_call (IBusService           *service,
     return TRUE;
 #endif
 }
-
+#endif
 
 static GVariant *
 bus_dbus_impl_service_get_property (IBusService        *service,

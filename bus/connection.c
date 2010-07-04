@@ -125,7 +125,6 @@ bus_connection_lookup (GDBusConnection *dbus_connection)
     return connection;
 }
 
-
 const gchar *
 bus_connection_get_unique_name (BusConnection   *connection)
 {

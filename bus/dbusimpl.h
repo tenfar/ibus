@@ -51,29 +51,6 @@ G_BEGIN_DECLS
 typedef struct _BusDBusImpl BusDBusImpl;
 typedef struct _BusDBusImplClass BusDBusImplClass;
 
-struct _BusDBusImpl {
-    IBusService parent;
-    /* instance members */
-    GHashTable *unique_names;
-    GHashTable *names;
-    GHashTable *objects;
-    GList *connections;
-    GList *rules;
-    gint id;
-
-    GList *dispatch_queue;
-};
-
-struct _BusDBusImplClass {
-    IBusServiceClass parent;
-
-    /* class members */
-    void    (* name_owner_changed) (BusDBusImpl     *dbus,
-                                    gchar           *name,
-                                    gchar           *old_name,
-                                    gchar           *new_name);
-};
-
 GType            bus_dbus_impl_get_type         (void);
 BusDBusImpl     *bus_dbus_impl_get_default      (void);
 gboolean         bus_dbus_impl_new_connection   (BusDBusImpl    *dbus,
@@ -89,12 +66,10 @@ void             bus_dbus_impl_dispatch_message_by_rule
                                                 (BusDBusImpl    *dbus,
                                                  GDBusMessage   *message,
                                                  BusConnection  *skip_connection);
-#if 0
 gboolean         bus_dbus_impl_register_object  (BusDBusImpl    *dbus,
                                                  IBusService    *object);
 gboolean         bus_dbus_impl_unregister_object(BusDBusImpl    *dbus,
                                                  IBusService    *object);
-#endif
 G_END_DECLS
 #endif
 

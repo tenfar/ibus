@@ -35,6 +35,29 @@ enum {
 
 static guint dbus_signals[LAST_SIGNAL] = { 0 };
 
+struct _BusDBusImpl {
+    IBusService parent;
+    /* instance members */
+    GHashTable *unique_names;
+    GHashTable *names;
+    GList *objects;
+    GList *connections;
+    GList *rules;
+    gint id;
+
+    GList *dispatch_queue;
+};
+
+struct _BusDBusImplClass {
+    IBusServiceClass parent;
+
+    /* class members */
+    void    (* name_owner_changed) (BusDBusImpl     *dbus,
+                                    gchar           *name,
+                                    gchar           *old_name,
+                                    gchar           *new_name);
+};
+
 /* functions prototype */
 static void     bus_dbus_impl_destroy           (BusDBusImpl        *dbus);
 static void     bus_dbus_impl_service_method_call
@@ -73,6 +96,8 @@ static void      bus_dbus_impl_connection_destroy_cb
                                                 (BusConnection      *connection,
                                                  BusDBusImpl        *dbus);
 static void      bus_dbus_impl_rule_destroy_cb  (BusMatchRule       *rule,
+                                                 BusDBusImpl        *dbus);
+static void      bus_dbus_impl_object_destroy_cb(IBusService        *object,
                                                  BusDBusImpl        *dbus);
 
 G_DEFINE_TYPE(BusDBusImpl, bus_dbus_impl, IBUS_TYPE_SERVICE)
@@ -193,19 +218,21 @@ bus_dbus_impl_init (BusDBusImpl *dbus)
 {
     dbus->unique_names = g_hash_table_new (g_str_hash, g_str_equal);
     dbus->names = g_hash_table_new (g_str_hash, g_str_equal);
-    dbus->objects = g_hash_table_new (g_str_hash, g_str_equal);
-    dbus->connections = NULL;
-    dbus->rules = NULL;
-    dbus->id = 1;
-
-    g_object_ref (dbus);
-    g_hash_table_insert (dbus->objects, "/org/freedesktop/DBus", dbus);
 }
 
 static void
 bus_dbus_impl_destroy (BusDBusImpl *dbus)
 {
     GList *p;
+
+    for (p = dbus->objects; p != NULL; p = p->next) {
+        IBusService *object = (IBusService *)p->data;
+        g_signal_handlers_disconnect_by_func (object, G_CALLBACK (bus_dbus_impl_object_destroy_cb), dbus);
+        ibus_object_destroy ((IBusObject *)object);
+        g_object_unref (object);
+    }
+    g_list_free (dbus->objects);
+    dbus->objects = NULL;
 
     for (p = dbus->rules; p != NULL; p = p->next) {
         BusMatchRule *rule = BUS_MATCH_RULE (p->data);
@@ -228,11 +255,9 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
 
     g_hash_table_remove_all (dbus->unique_names);
     g_hash_table_remove_all (dbus->names);
-    g_hash_table_remove_all (dbus->objects);
 
     dbus->unique_names = NULL;
     dbus->names = NULL;
-    dbus->objects = NULL;
 
     IBUS_OBJECT_CLASS(bus_dbus_impl_parent_class)->destroy ((IBusObject *)dbus);
 }
@@ -248,7 +273,7 @@ bus_dbus_impl_hello (BusDBusImpl           *dbus,
                         "Already handled an Hello message");
     }
     else {
-        gchar *name = g_strdup_printf (":1.%d", dbus->id ++);
+        gchar *name = g_strdup_printf (":1.%d", ++dbus->id);
         bus_connection_set_unique_name (connection, name);
         g_free (name);
 
@@ -654,6 +679,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         if (g_dbus_message_get_sender (message) == NULL) {
             g_dbus_message_set_sender (message, "org.freedesktop.DBus");
         }
+        /* dispatch the outgoing message by rule */
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
         return FALSE;
     }
@@ -667,27 +693,45 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
         case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
         case G_DBUS_MESSAGE_TYPE_ERROR:
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
             return FALSE;
         case G_DBUS_MESSAGE_TYPE_SIGNAL:
         default:
-            g_return_val_if_reached (TRUE);
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            g_return_val_if_reached (FALSE);
         }
     }
     else if (g_strcmp0 (destination, "org.freedesktop.DBus") == 0) {
+        switch (message_type) {
+        case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+        case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+        case G_DBUS_MESSAGE_TYPE_ERROR:
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            return FALSE;
+        case G_DBUS_MESSAGE_TYPE_SIGNAL:
+        default:
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            g_return_val_if_reached (FALSE);
+        }
     }
     else if (destination == NULL) {
         switch (message_type) {
         case G_DBUS_MESSAGE_TYPE_SIGNAL:
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
-            return TRUE;
+            return FALSE;
         case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
         case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
         case G_DBUS_MESSAGE_TYPE_ERROR:
         default:
-            g_return_val_if_reached (TRUE);
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            g_return_val_if_reached (FALSE);
         }
-
     }
     else {
         /* forward message */
@@ -696,126 +740,6 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
     }
 
     return FALSE;
-#if 0
-    switch (message_type) {
-    case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
-    case G_DBUS_MESSAGE_TYPE_ERROR:
-
-    switch (g_dbus_message_get_message_type (message)) {
-    case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
-    case G_DBUS_MESSAGE_TYPE_SIGNAL:
-        break;
-    default:
-        g_return_if_reached (FALSE);
-        break;
-    }
-
-    if (destination == NULL ||
-        g_strcmp0 (destination, "org.freedesktop.DBus") ||
-        g_strcmp0 (destination, "org.freedesktop.IBus")) {
-        /* it should be handled by bus */
-        bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
-        return FALSE;
-    }
-
-    /* forward message by destination */
-    bus_dbus_impl_forward_message (dbus, message);
-    return TRUE;
-#endif
-
-    /* FIXME */
-#if 0
-    const gchar *dest;
-
-    if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
-        return FALSE;
-    }
-
-    ibus_message_set_sender (message, bus_connection_get_unique_name (connection));
-
-    switch (ibus_message_get_type (message)) {
-#if 1
-    case DBUS_MESSAGE_TYPE_ERROR:
-        g_debug ("From :%s to %s, Error: %s : %s",
-                 ibus_message_get_sender (message),
-                 ibus_message_get_destination (message),
-                 ibus_message_get_error_name (message),
-                 ibus_message_get_error_message (message));
-        break;
-#endif
-#if 1
-    case DBUS_MESSAGE_TYPE_SIGNAL:
-        g_debug ("From :%s to %s, Signal: %s @ %s",
-                 ibus_message_get_sender (message),
-                 ibus_message_get_destination (message),
-                 ibus_message_get_member (message),
-                 ibus_message_get_path (message)
-                 );
-        break;
-#endif
-#if 1
-    case DBUS_MESSAGE_TYPE_METHOD_CALL:
-        g_debug("From %s to %s, Method %s on %s",
-                ibus_message_get_sender (message),
-                ibus_message_get_destination (message),
-                ibus_message_get_path (message),
-                ibus_message_get_member (message));
-        break;
-#endif
-    }
-
-    dest = ibus_message_get_destination (message);
-
-    if (dest == NULL ||
-        strcmp ((gchar *)dest, IBUS_SERVICE_IBUS) == 0 ||
-        strcmp ((gchar *)dest, DBUS_SERVICE_DBUS) == 0) {
-        /* this message is sent to ibus-daemon */
-
-        switch (ibus_message_get_type (message)) {
-        case DBUS_MESSAGE_TYPE_SIGNAL:
-        case DBUS_MESSAGE_TYPE_METHOD_RETURN:
-        case DBUS_MESSAGE_TYPE_ERROR:
-            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
-            return FALSE;
-        case DBUS_MESSAGE_TYPE_METHOD_CALL:
-            {
-                const gchar *path;
-                IBusService *object;
-
-                path = ibus_message_get_path (message);
-
-                object = g_hash_table_lookup (dbus->objects, path);
-
-                if (object == NULL ||
-                    ibus_service_handle_message (object,
-                                                 (IBusConnection *) connection,
-                                                 message) == FALSE) {
-                    IBusMessage *error;
-                    error = ibus_message_new_error_printf (message,
-                                                           DBUS_ERROR_UNKNOWN_METHOD,
-                                                           "Unknown method %s on %s",
-                                                           ibus_message_get_member (message),
-                                                           path);
-                    ibus_connection_send ((IBusConnection *) connection, error);
-                    ibus_message_unref (error);
-                }
-
-                /* dispatch message */
-                bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
-            }
-            break;
-        default:
-            g_assert (FALSE);
-        }
-    }
-    else {
-        /* If the destination is not IBus or DBus, the message will be forwanded. */
-        bus_dbus_impl_dispatch_message (dbus, message);
-    }
-
-    g_signal_stop_emission_by_name (connection, "ibus-message");
-    return TRUE;
-#endif
 }
 
 /* FIXME */
@@ -1084,8 +1008,8 @@ bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
 }
 
 static void
-_object_destroy_cb (IBusService *object,
-                    BusDBusImpl *dbus)
+bus_dbus_impl_object_destroy_cb (IBusService *object,
+                                 BusDBusImpl *dbus)
 {
     bus_dbus_impl_unregister_object (dbus, object);
 }
@@ -1095,28 +1019,17 @@ gboolean
 bus_dbus_impl_register_object (BusDBusImpl *dbus,
                                IBusService *object)
 {
-    /* FIXME */
-#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (IBUS_IS_SERVICE (object));
-
-    const gchar *path;
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
         return FALSE;
     }
 
-    path = ibus_service_get_path (object);
+    dbus->objects = g_list_prepend (dbus->objects, g_object_ref (object));
+    g_signal_connect (object, "destroy",
+                    G_CALLBACK (bus_dbus_impl_object_destroy_cb), dbus);
 
-    g_return_val_if_fail (path, FALSE);
-
-    g_return_val_if_fail  (g_hash_table_lookup (dbus->objects, path) == NULL, FALSE);
-
-    g_object_ref_sink (object);
-    g_hash_table_insert (dbus->objects, (gpointer)path, object);
-
-    g_signal_connect (object, "destroy", G_CALLBACK (_object_destroy_cb), dbus);
-#endif
     return TRUE;
 }
 
@@ -1124,27 +1037,18 @@ gboolean
 bus_dbus_impl_unregister_object (BusDBusImpl *dbus,
                                  IBusService *object)
 {
-    /* FIXME */
-#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (IBUS_IS_SERVICE (object));
 
-    const gchar *path;
-
-    if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
+    GList *p = g_list_find (dbus->objects, object);
+    if (p == NULL)
         return FALSE;
-    }
 
-    path = ibus_service_get_path (object);
-    g_return_val_if_fail (path, FALSE);
-
-    g_return_val_if_fail  (g_hash_table_lookup (dbus->objects, path) == object, FALSE);
-
-    g_signal_handlers_disconnect_by_func (object, G_CALLBACK (_object_destroy_cb), dbus);
-
-    g_hash_table_remove (dbus->objects, path);
+    g_signal_handlers_disconnect_by_func (object,
+                    G_CALLBACK (bus_dbus_impl_object_destroy_cb), dbus);
+    dbus->objects = g_list_delete_link (dbus->objects, p);
     g_object_unref (object);
-#endif
+
     return TRUE;
 }
 

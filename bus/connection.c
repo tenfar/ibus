@@ -60,8 +60,14 @@ static void
 bus_connection_destroy (BusConnection *connection)
 {
     if (connection->connection) {
+        /* disconnect from closed signal */
         g_signal_handlers_disconnect_by_func (connection->connection,
                 G_CALLBACK (bus_connection_dbus_connection_closed_cb), connection);
+
+        /* remove filter */
+        bus_connection_set_filter (connection, NULL, NULL, NULL);
+
+        /* disconnect busconnection with dbus connection */
         g_object_set_qdata ((GObject *)connection->connection, BUS_CONNECTION_QUARK, NULL);
         g_object_unref (connection->connection);
         connection->connection = NULL;
@@ -72,8 +78,8 @@ bus_connection_destroy (BusConnection *connection)
         connection->unique_name = NULL;
     }
 
-    g_slist_foreach (connection->names, (GFunc) g_free, NULL);
-    g_slist_free (connection->names);
+    g_list_foreach (connection->names, (GFunc) g_free, NULL);
+    g_list_free (connection->names);
     connection->names = NULL;
 
     IBUS_OBJECT_CLASS(bus_connection_parent_class)->destroy (IBUS_OBJECT (connection));
@@ -113,16 +119,20 @@ bus_connection_quark (void)
 }
 
 BusConnection *
+bus_connection_new (GDBusConnection *dbus_connection)
+{
+    g_return_val_if_fail (bus_connection_lookup (dbus_connection) == NULL, NULL);
+    BusConnection * connection = BUS_CONNECTION (g_object_new (BUS_TYPE_CONNECTION, NULL));
+    bus_connection_set_dbus_connection (connection, dbus_connection);
+    return connection;
+}
+
+BusConnection *
 bus_connection_lookup (GDBusConnection *dbus_connection)
 {
     g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
-
-    BusConnection *connection = g_object_get_qdata ((GObject *)dbus_connection, BUS_CONNECTION_QUARK);
-    if (connection == NULL && !g_dbus_connection_is_closed (dbus_connection)) {
-        connection = BUS_CONNECTION (g_object_new (BUS_TYPE_CONNECTION, NULL));
-        bus_connection_set_dbus_connection (connection, dbus_connection);
-    }
-    return connection;
+    return (BusConnection *) g_object_get_qdata ((GObject *)dbus_connection,
+                    BUS_CONNECTION_QUARK);
 }
 
 const gchar *
@@ -139,7 +149,7 @@ bus_connection_set_unique_name (BusConnection   *connection,
     connection->unique_name = g_strdup (name);
 }
 
-const GSList *
+const GList *
 bus_connection_get_names (BusConnection   *connection)
 {
     return connection->names;
@@ -152,7 +162,7 @@ bus_connection_add_name (BusConnection     *connection,
     gchar *new_name;
 
     new_name = g_strdup (name);
-    connection->names = g_slist_append (connection->names, new_name);
+    connection->names = g_list_append (connection->names, new_name);
 
     return new_name;
 }
@@ -161,11 +171,11 @@ gboolean
 bus_connection_remove_name (BusConnection     *connection,
                              const gchar       *name)
 {
-    GSList *list = g_slist_find_custom (connection->names, name, (GCompareFunc) g_strcmp0);
+    GList *list = g_list_find_custom (connection->names, name, (GCompareFunc) g_strcmp0);
 
     if (list) {
         g_free (list->data);
-        connection->names = g_slist_delete_link (connection->names, list);
+        connection->names = g_list_delete_link (connection->names, list);
         return TRUE;
     }
     return FALSE;
@@ -182,7 +192,7 @@ bus_connection_add_match (BusConnection  *connection,
     if (match == NULL)
         return FALSE;
 
-    GSList *list;
+    GList *list;
     for (list = connection->rules; list != NULL; list = list->next) {
         if (bus_match_rule_is_equal (match, (BusMatchRule *)list->data)) {
             g_object_unref (match);
@@ -190,7 +200,7 @@ bus_connection_add_match (BusConnection  *connection,
         }
     }
 
-    connection->rules = g_slist_append (connection->rules, match);
+    connection->rules = g_list_append (connection->rules, match);
     return TRUE;
 }
 
@@ -207,4 +217,26 @@ bus_connection_get_dbus_connection (BusConnection *connection)
 {
     g_assert (BUS_IS_CONNECTION (connection));
     return connection->connection;
+}
+
+
+void
+bus_connection_set_filter (BusConnection             *connection,
+                           GDBusMessageFilterFunction filter_func,
+                           gpointer                   user_data,
+                           GDestroyNotify             user_data_free_func)
+{
+    g_assert (BUS_IS_CONNECTION (connection));
+
+    if (connection->filter_id != 0) {
+        g_dbus_connection_remove_filter (connection->connection, connection->filter_id);
+        connection->filter_id = 0;
+    }
+
+    if (filter_func != NULL) {
+        connection->filter_id = g_dbus_connection_add_filter (connection->connection,
+                                                              filter_func,
+                                                              user_data,
+                                                              user_data_free_func);
+    }
 }

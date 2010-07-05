@@ -29,9 +29,10 @@ bus_new_connection_cb (GDBusServer     *server,
                        gpointer         user_data)
 {
     g_debug ("new connection");
-    BusConnection *connection = bus_connection_lookup (dbus_connection);
+    BusConnection *connection = bus_connection_new (dbus_connection);
     /* FIXME */
     ibus_object_destroy ((IBusObject *)connection);
+    g_object_unref (connection);
 }
 
 void

@@ -335,7 +335,7 @@ bus_dbus_impl_get_name_owner (BusDBusImpl           *dbus,
 
     if (g_strcmp0 (name, "org.freedesktop.IBus") == 0 ||
         g_strcmp0 (name, "org.freedesktop.DBus") == 0) {
-        name_owner = name;
+        name_owner = "org.freedesktop.DBus";
     }
     else {
         BusConnection *owner = bus_dbus_impl_get_connection_by_name (dbus, name);
@@ -555,9 +555,6 @@ bus_dbus_impl_service_method_call (IBusService           *service,
 {
     BusDBusImpl *dbus = BUS_DBUS_IMPL (service);
 
-    BusConnection *connection = bus_connection_lookup (dbus_connection);
-    g_assert (BUS_IS_CONNECTION (connection));
-
     if (g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0) {
         IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->service_method_call (
                                         (IBusService *) dbus,
@@ -590,6 +587,8 @@ bus_dbus_impl_service_method_call (IBusService           *service,
     gint i;
     for (i = 0; G_N_ELEMENTS (methods); i++) {
         if (g_strcmp0 (method_name, methods[i].method_name) == 0) {
+            BusConnection *connection = bus_connection_lookup (dbus_connection);
+            g_assert (BUS_IS_CONNECTION (connection));
             methods[i].method (dbus, connection, parameters, invocation);
             return;
         }
@@ -600,17 +599,119 @@ bus_dbus_impl_service_method_call (IBusService           *service,
                     "org.freedesktop.DBus does not support %s", method_name);
 }
 
-#if 0
-static void
-bus_dbus_impl_service_method_call (IBusService           *service,
-                                   GDBusConnection       *connection,
-                                   const gchar           *sender,
-                                   const gchar           *object_path,
-                                   const gchar           *interface_name,
-                                   const gchar           *method_name,
-                                   GVariant              *parameters,
-                                   GDBusMethodInvocation *invocation)
+static GVariant *
+bus_dbus_impl_service_get_property (IBusService        *service,
+                                    GDBusConnection    *connection,
+                                    const gchar        *sender,
+                                    const gchar        *object_path,
+                                    const gchar        *interface_name,
+                                    const gchar        *property_name,
+                                    GError            **error)
 {
+    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
+                service_get_property (service,
+                                      connection,
+                                      sender,
+                                      object_path,
+                                      interface_name,
+                                      property_name,
+                                      error);
+}
+
+static gboolean
+bus_dbus_impl_service_set_property (IBusService        *service,
+                                    GDBusConnection    *connection,
+                                    const gchar        *sender,
+                                    const gchar        *object_path,
+                                    const gchar        *interface_name,
+                                    const gchar        *property_name,
+                                    GVariant           *value,
+                                    GError            **error)
+{
+    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
+                service_set_property (service,
+                                      connection,
+                                      sender,
+                                      object_path,
+                                      interface_name,
+                                      property_name,
+                                      value,
+                                      error);
+
+}
+
+static gboolean
+bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
+                                    GDBusMessage    *message,
+                                    gboolean         incoming,
+                                    gpointer         user_data)
+{
+    BusDBusImpl *dbus = (BusDBusImpl *) user_data;
+    BusConnection *connection = bus_connection_lookup (dbus_connection);
+
+    if (!incoming) {
+        /* outgoing messages */
+        if (g_dbus_message_get_sender (message) == NULL) {
+            g_dbus_message_set_sender (message, "org.freedesktop.DBus");
+        }
+        bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
+        return FALSE;
+    }
+
+    /* incoming messages */
+    const gchar *destination = g_dbus_message_get_destination (message);
+    GDBusMessageType message_type = g_dbus_message_get_message_type (message);
+
+    if (g_strcmp0 (destination, "org.freedesktop.IBus") == 0) {
+    }
+    else if (g_strcmp0 (destination, "org.freedesktop.DBus") == 0) {
+    }
+    else if (destination == NULL) {
+        switch (message_type) {
+        case G_DBUS_MESSAGE_TYPE_SIGNAL:
+            /* dispatch signal messages by match rule */
+            bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            return TRUE;
+        case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+        case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+        case G_DBUS_MESSAGE_TYPE_ERROR:
+        default:
+            g_return_val_if_reached (TRUE);
+        }
+
+    }
+    else {
+        /* forward message */
+        bus_dbus_impl_forward_message (dbus, connection, message);
+        return TRUE;
+    }
+
+#if 0
+    switch (message_type) {
+    case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+    case G_DBUS_MESSAGE_TYPE_ERROR:
+
+    switch (g_dbus_message_get_message_type (message)) {
+    case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+    case G_DBUS_MESSAGE_TYPE_SIGNAL:
+        break;
+    default:
+        g_return_if_reached (FALSE);
+        break;
+    }
+
+    if (destination == NULL ||
+        g_strcmp0 (destination, "org.freedesktop.DBus") ||
+        g_strcmp0 (destination, "org.freedesktop.IBus")) {
+        /* it should be handled by bus */
+        bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+        return FALSE;
+    }
+
+    /* forward message by destination */
+    bus_dbus_impl_forward_message (dbus, message);
+    return TRUE;
+#endif
 
     /* FIXME */
 #if 0
@@ -706,48 +807,6 @@ bus_dbus_impl_service_method_call (IBusService           *service,
     return TRUE;
 #endif
 }
-#endif
-
-static GVariant *
-bus_dbus_impl_service_get_property (IBusService        *service,
-                                    GDBusConnection    *connection,
-                                    const gchar        *sender,
-                                    const gchar        *object_path,
-                                    const gchar        *interface_name,
-                                    const gchar        *property_name,
-                                    GError            **error)
-{
-    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
-                service_get_property (service,
-                                      connection,
-                                      sender,
-                                      object_path,
-                                      interface_name,
-                                      property_name,
-                                      error);
-}
-
-static gboolean
-bus_dbus_impl_service_set_property (IBusService        *service,
-                                    GDBusConnection    *connection,
-                                    const gchar        *sender,
-                                    const gchar        *object_path,
-                                    const gchar        *interface_name,
-                                    const gchar        *property_name,
-                                    GVariant           *value,
-                                    GError            **error)
-{
-    return IBUS_SERVICE_CLASS (bus_dbus_impl_parent_class)->
-                service_set_property (service,
-                                      connection,
-                                      sender,
-                                      object_path,
-                                      interface_name,
-                                      property_name,
-                                      value,
-                                      error);
-
-}
 
 /* FIXME */
 #if 0
@@ -826,6 +885,8 @@ bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
     g_object_ref_sink (connection);
     dbus->connections = g_list_append (dbus->connections, connection);
 
+    bus_connection_set_filter (connection,
+                    bus_dbus_impl_connection_filter_cb, g_object_ref (dbus), g_object_unref);
     /* FIXME */
 #if 0
     g_signal_connect (connection,
@@ -853,7 +914,7 @@ bus_dbus_impl_get_connection_by_name (BusDBusImpl    *dbus,
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (name != NULL);
 
-    if (name[0] == ':') {
+    if (G_LIKELY (name[0] == ':')) {
         return (BusConnection *)g_hash_table_lookup (dbus->unique_names, name);
     }
     else {
@@ -862,42 +923,119 @@ bus_dbus_impl_get_connection_by_name (BusDBusImpl    *dbus,
 }
 
 void
-bus_dbus_impl_dispatch_message (BusDBusImpl  *dbus,
-                                GDBusMessage *message)
+bus_dbus_impl_forward_message (BusDBusImpl   *dbus,
+                               BusConnection *connection,
+                               GDBusMessage  *message)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
+    g_assert (BUS_IS_CONNECTION (connection));
     g_assert (message != NULL);
-
-    const gchar *destination;
-    BusConnection *dest_connection = NULL;
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus)))
         return;
 
-    destination = g_dbus_message_get_destination (message);
+    g_dbus_message_set_sender (message, bus_connection_get_unique_name (connection));
 
+    const gchar *destination = g_dbus_message_get_destination (message);
     if (destination != NULL) {
-        dest_connection = bus_dbus_impl_get_connection_by_name (dbus, destination);
+        BusConnection *dest_connection = bus_dbus_impl_get_connection_by_name (dbus, destination);
 
         if (dest_connection != NULL) {
             g_dbus_connection_send_message (bus_connection_get_dbus_connection (dest_connection),
                                             message, NULL, NULL);
         }
-        /* FIXME should reply an error message? */
-        #if 0
         else {
-            IBusMessage *reply_message;
-            reply_message = ibus_message_new_error_printf (message,
-                                                     DBUS_ERROR_SERVICE_UNKNOWN,
-                                                     "Can not find service %s",
-                                                     destination);
-            bus_dbus_impl_dispatch_message (dbus, reply_message);
-            ibus_message_unref (reply_message);
+            if (g_dbus_message_get_message_type (message) == G_DBUS_MESSAGE_TYPE_METHOD_CALL) {
+                /* reply an error message, if the destination does not exist */
+                GDBusMessage *reply_message = g_dbus_message_new_method_error (message,
+                                "org.freedesktop.DBus.Error.ServiceUnknown",
+                                "No service name is '%s'.", destination);
+                g_dbus_message_set_sender (reply_message, "org.freedesktop.DBus");
+                g_dbus_message_set_destination (reply_message, bus_connection_get_unique_name (connection));
+                g_dbus_connection_send_message (bus_connection_get_dbus_connection (connection),
+                                reply_message, NULL, NULL);
+                g_object_unref (reply_message);
+            }
+            else {
+                /* ignore other messages */
+            }
         }
-        #endif
     }
     else
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+}
+
+typedef struct _BusDispatchData BusDispatchData;
+struct _BusDispatchData {
+    GDBusMessage *message;
+    BusConnection *skip_connection;
+};
+
+static BusDispatchData *
+bus_dispatch_data_new (GDBusMessage *message,
+                               BusConnection *skip_connection)
+{
+    BusDispatchData *data = g_slice_new (BusDispatchData);
+
+    data->message = (GDBusMessage *) g_object_ref (message);
+    if (skip_connection) {
+        data->skip_connection = (BusConnection *) g_object_ref (skip_connection);
+    }
+    else {
+        data->skip_connection = NULL;
+    }
+    return data;
+}
+
+static void
+bus_dispatch_data_free (BusDispatchData *data)
+{
+    g_object_unref (data->message);
+    if (data->skip_connection)
+        g_object_unref (data->skip_connection);
+    g_slice_free (BusDispatchData, data);
+}
+
+static gboolean
+bus_dbus_impl_dispatch_message_by_rule_cb (BusDBusImpl     *dbus)
+{
+
+    g_assert (dbus->dispatch_queue != NULL);
+
+    if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
+        /* dbus was destryed */
+        g_list_foreach (dbus->dispatch_queue, (GFunc)bus_dispatch_data_free, NULL);
+        g_list_free (dbus->dispatch_queue);
+        dbus->dispatch_queue = NULL;
+        return FALSE;
+    }
+
+    /* remove fist node */
+    BusDispatchData *data = (BusDispatchData *)dbus->dispatch_queue->data;
+    dbus->dispatch_queue = g_list_remove_link (dbus->dispatch_queue, dbus->dispatch_queue);
+
+    GList *link = NULL;
+    GList *recipients = NULL;
+
+    /* check each match rules, and get recipients */
+    for (link = dbus->rules; link != NULL; link = link->next) {
+        GList *list = bus_match_rule_get_recipients ((BusMatchRule *)link->data,
+                                                     data->message);
+        recipients = g_list_concat (recipients, list);
+    }
+
+    /* send message to each recipients */
+    for (link = recipients; link != NULL; link = link->next) {
+        BusConnection *connection = (BusConnection *)link->data;
+        if (G_LIKELY (connection != data->skip_connection)) {
+            g_dbus_connection_send_message (bus_connection_get_dbus_connection (connection),
+                                            data->message, NULL, NULL);
+        }
+    }
+    g_list_free (recipients);
+    bus_dispatch_data_free (data);
+
+    return (dbus->dispatch_queue != NULL);
 }
 
 void
@@ -913,37 +1051,27 @@ bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
         return;
     }
 
-    static GQuark dispatch_quark = 0;
-    if (dispatch_quark == 0) {
-        dispatch_quark = g_quark_from_static_string ("DISPATCH");
+    static GQuark dispatched_quark = 0;
+    if (dispatched_quark == 0) {
+        dispatched_quark = g_quark_from_static_string ("DISPATCHED");
     }
 
     /* If this message has been dispatched by rule. */
-    if (g_object_get_qdata ((GObject *)message, dispatch_quark) != NULL)
+    if (g_object_get_qdata ((GObject *)message, dispatched_quark) != NULL)
         return;
-    g_object_set_qdata ((GObject *)message, dispatch_quark, GINT_TO_POINTER (1));
+    g_object_set_qdata ((GObject *)message, dispatched_quark, GINT_TO_POINTER (1));
 
-    GList *link = NULL;
-    GList *recipients = NULL;
-
-    /* check each match rules, and get recipients */
-    for (link = dbus->rules; link != NULL; link = link->next) {
-        GList *list = bus_match_rule_get_recipients ((BusMatchRule *)link->data,
-                                                     message);
-        recipients = g_list_concat (recipients, list);
+    /* append dispatch data into the queue, and start idle task if necessary */
+    gboolean running = (dbus->dispatch_queue != NULL);
+    dbus->dispatch_queue = g_list_append (dbus->dispatch_queue,
+                    bus_dispatch_data_new (message, skip_connection));
+    if (!running) {
+        g_idle_add_full (0,
+                         (GSourceFunc)bus_dbus_impl_dispatch_message_by_rule_cb,
+                         g_object_ref (dbus),
+                         (GDestroyNotify)g_object_unref);
     }
-
-    /* send message to each recipients */
-    for (link = recipients; link != NULL; link = link->next) {
-        BusConnection *connection = (BusConnection *)link->data;
-        if (G_LIKELY (connection != skip_connection)) {
-            g_dbus_connection_send_message (bus_connection_get_dbus_connection (connection),
-                                            message, NULL, NULL);
-        }
-    }
-    g_list_free (recipients);
 }
-
 
 static void
 _object_destroy_cb (IBusService *object,

@@ -60,6 +60,8 @@ struct _BusDBusImpl {
     GList *connections;
     GList *rules;
     gint id;
+
+    GList *dispatch_queue;
 };
 
 struct _BusDBusImplClass {
@@ -80,7 +82,8 @@ BusConnection   *bus_dbus_impl_get_connection_by_name
                                                 (BusDBusImpl    *dbus,
                                                  const gchar    *name);
 /* FIXME */
-void             bus_dbus_impl_dispatch_message (BusDBusImpl    *dbus,
+void             bus_dbus_impl_forward_message  (BusDBusImpl    *dbus,
+                                                 BusConnection  *connection,
                                                  GDBusMessage   *message);
 void             bus_dbus_impl_dispatch_message_by_rule
                                                 (BusDBusImpl    *dbus,

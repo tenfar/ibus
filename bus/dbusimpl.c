@@ -663,6 +663,15 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
     GDBusMessageType message_type = g_dbus_message_get_message_type (message);
 
     if (g_strcmp0 (destination, "org.freedesktop.IBus") == 0) {
+        switch (message_type) {
+        case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+        case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+        case G_DBUS_MESSAGE_TYPE_ERROR:
+            return FALSE;
+        case G_DBUS_MESSAGE_TYPE_SIGNAL:
+        default:
+            g_return_val_if_reached (TRUE);
+        }
     }
     else if (g_strcmp0 (destination, "org.freedesktop.DBus") == 0) {
     }
@@ -686,6 +695,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         return TRUE;
     }
 
+    return FALSE;
 #if 0
     switch (message_type) {
     case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:

@@ -205,7 +205,7 @@ bus_dbus_impl_init (BusDBusImpl *dbus)
 static void
 bus_dbus_impl_destroy (BusDBusImpl *dbus)
 {
-    GSList *p;
+    GList *p;
 
     for (p = dbus->rules; p != NULL; p = p->next) {
         BusMatchRule *rule = BUS_MATCH_RULE (p->data);
@@ -214,7 +214,7 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
         ibus_object_destroy ((IBusObject *) rule);
         g_object_unref (rule);
     }
-    g_slist_free (dbus->rules);
+    g_list_free (dbus->rules);
     dbus->rules = NULL;
 
     for (p = dbus->connections; p != NULL; p = p->next) {
@@ -223,7 +223,7 @@ bus_dbus_impl_destroy (BusDBusImpl *dbus)
         g_dbus_connection_close (connection);
         g_object_unref (connection);
     }
-    g_slist_free (dbus->connections);
+    g_list_free (dbus->connections);
     dbus->connections = NULL;
 
     g_hash_table_remove_all (dbus->unique_names);
@@ -372,7 +372,7 @@ static void
 bus_dbus_impl_rule_destroy_cb (BusMatchRule *rule,
                            BusDBusImpl  *dbus)
 {
-    dbus->rules = g_slist_remove (dbus->rules, rule);
+    dbus->rules = g_list_remove (dbus->rules, rule);
     g_object_unref (rule);
 }
 
@@ -394,7 +394,7 @@ bus_dbus_impl_add_match (BusDBusImpl           *dbus,
     }
 
     g_dbus_method_invocation_return_value (invocation, NULL);
-    GSList *p;
+    GList *p;
     for (p = dbus->rules; p != NULL; p = p->next) {
         if (bus_match_rule_is_equal (rule, (BusMatchRule *)p->data)) {
             bus_match_rule_add_recipient ((BusMatchRule *)p->data, connection);
@@ -405,7 +405,7 @@ bus_dbus_impl_add_match (BusDBusImpl           *dbus,
 
     if (rule) {
         bus_match_rule_add_recipient (rule, connection);
-        dbus->rules = g_slist_append (dbus->rules, rule);
+        dbus->rules = g_list_append (dbus->rules, rule);
         g_signal_connect (rule, "destroy", G_CALLBACK (bus_dbus_impl_rule_destroy_cb), dbus);
     }
 }
@@ -428,7 +428,7 @@ bus_dbus_impl_remove_match (BusDBusImpl           *dbus,
     }
 
     g_dbus_method_invocation_return_value (invocation, NULL);
-    GSList *p;
+    GList *p;
     for (p = dbus->rules; p != NULL; p = p->next) {
         if (bus_match_rule_is_equal (rule, (BusMatchRule *)p->data)) {
             bus_match_rule_remove_recipient ((BusMatchRule *)p->data, connection);
@@ -526,31 +526,21 @@ bus_dbus_impl_release_name (BusDBusImpl           *dbus,
 static void
 bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
                                   gchar         *name,
-                                  gchar         *old_name,
-                                  gchar         *new_name)
+                                  gchar         *old_owner,
+                                  gchar         *new_owner)
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (name != NULL);
-    g_assert (old_name != NULL);
-    g_assert (new_name != NULL);
+    g_assert (old_owner != NULL);
+    g_assert (new_owner != NULL);
     /* FIXME */
-#if 0
-    IBusMessage *message;
-
-    message = ibus_message_new_signal (DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "NameOwnerChanged");
-    ibus_message_append_args (message,
-                              G_TYPE_STRING, &name,
-                              G_TYPE_STRING, &old_name,
-                              G_TYPE_STRING, &new_name,
-                              G_TYPE_INVALID);
-    ibus_message_set_sender (message, DBUS_SERVICE_DBUS);
-
+    GDBusMessage *message = g_dbus_message_new_signal ("/org/freedesktop/DBus",
+                                                       "org.freedesktop.DBus",
+                                                       "NameOwnerChanged");
+    g_dbus_message_set_sender (message, "org.freedesktop.DBus");
+    g_dbus_message_set_body (message,
+                             g_variant_new ("(sss)", name, old_owner, new_owner));
     bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
-
-    ibus_message_unref (message);
-#endif
 }
 
 static void
@@ -820,7 +810,7 @@ bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
         name = name->next;
     }
 #endif
-    dbus->connections = g_slist_remove (dbus->connections, connection);
+    dbus->connections = g_list_remove (dbus->connections, connection);
     g_object_unref (connection);
 }
 
@@ -831,10 +821,10 @@ bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (g_slist_find (dbus->connections, connection) == NULL);
+    g_assert (g_list_find (dbus->connections, connection) == NULL);
 
     g_object_ref_sink (connection);
-    dbus->connections = g_slist_append (dbus->connections, connection);
+    dbus->connections = g_list_append (dbus->connections, connection);
 
     /* FIXME */
 #if 0
@@ -871,31 +861,30 @@ bus_dbus_impl_get_connection_by_name (BusDBusImpl    *dbus,
     }
 }
 
-
 void
 bus_dbus_impl_dispatch_message (BusDBusImpl  *dbus,
                                 GDBusMessage *message)
 {
-    /* FIXME */
-#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (message != NULL);
 
     const gchar *destination;
     BusConnection *dest_connection = NULL;
 
-    if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
+    if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus)))
         return;
-    }
 
-    destination = ibus_message_get_destination (message);
+    destination = g_dbus_message_get_destination (message);
 
     if (destination != NULL) {
         dest_connection = bus_dbus_impl_get_connection_by_name (dbus, destination);
 
         if (dest_connection != NULL) {
-            ibus_connection_send (IBUS_CONNECTION (dest_connection), message);
+            g_dbus_connection_send_message (bus_connection_get_dbus_connection (dest_connection),
+                                            message, NULL, NULL);
         }
+        /* FIXME should reply an error message? */
+        #if 0
         else {
             IBusMessage *reply_message;
             reply_message = ibus_message_new_error_printf (message,
@@ -905,56 +894,54 @@ bus_dbus_impl_dispatch_message (BusDBusImpl  *dbus,
             bus_dbus_impl_dispatch_message (dbus, reply_message);
             ibus_message_unref (reply_message);
         }
+        #endif
     }
-
-    bus_dbus_impl_dispatch_message_by_rule (dbus, message, dest_connection);
-#endif
+    else
+        bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
 }
 
 void
 bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
                                         GDBusMessage    *message,
-                                        GDBusConnection *skip_connection)
+                                        BusConnection   *skip_connection)
 {
-    /* FIXME */
-#if 0
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (message != NULL);
-    g_assert (BUS_IS_CONNECTION (skip_connection) || skip_connection == NULL);
-
-    GList *recipients = NULL;
-    GList *link = NULL;
-
-    static gint32 data_slot = -1;
+    g_assert (skip_connection == NULL || BUS_IS_CONNECTION (skip_connection));
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
         return;
     }
 
-    if (data_slot == -1) {
-        dbus_message_allocate_data_slot (&data_slot);
+    static GQuark dispatch_quark = 0;
+    if (dispatch_quark == 0) {
+        dispatch_quark = g_quark_from_static_string ("DISPATCH");
     }
 
-    /* If this message has been dispatched by rule, it will be ignored. */
-    if (dbus_message_get_data (message, data_slot) != NULL)
+    /* If this message has been dispatched by rule. */
+    if (g_object_get_qdata ((GObject *)message, dispatch_quark) != NULL)
         return;
+    g_object_set_qdata ((GObject *)message, dispatch_quark, GINT_TO_POINTER (1));
 
-    dbus_message_set_data (message, data_slot, (gpointer) TRUE, NULL);
+    GList *link = NULL;
+    GList *recipients = NULL;
 
+    /* check each match rules, and get recipients */
     for (link = dbus->rules; link != NULL; link = link->next) {
-        GList *list = bus_match_rule_get_recipients (BUS_MATCH_RULE (link->data),
+        GList *list = bus_match_rule_get_recipients ((BusMatchRule *)link->data,
                                                      message);
         recipients = g_list_concat (recipients, list);
     }
 
+    /* send message to each recipients */
     for (link = recipients; link != NULL; link = link->next) {
-        BusConnection *connection = BUS_CONNECTION (link->data);
-        if (connection != skip_connection) {
-            ibus_connection_send (IBUS_CONNECTION (connection), message);
+        BusConnection *connection = (BusConnection *)link->data;
+        if (G_LIKELY (connection != skip_connection)) {
+            g_dbus_connection_send_message (bus_connection_get_dbus_connection (connection),
+                                            message, NULL, NULL);
         }
     }
     g_list_free (recipients);
-#endif
 }
 
 

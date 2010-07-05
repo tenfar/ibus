@@ -57,8 +57,8 @@ struct _BusDBusImpl {
     GHashTable *unique_names;
     GHashTable *names;
     GHashTable *objects;
-    GSList *connections;
-    GSList *rules;
+    GList *connections;
+    GList *rules;
     gint id;
 };
 
@@ -80,13 +80,13 @@ BusConnection   *bus_dbus_impl_get_connection_by_name
                                                 (BusDBusImpl    *dbus,
                                                  const gchar    *name);
 /* FIXME */
-#if 0
 void             bus_dbus_impl_dispatch_message (BusDBusImpl    *dbus,
-                                                 DBusMessage    *message);
+                                                 GDBusMessage   *message);
 void             bus_dbus_impl_dispatch_message_by_rule
                                                 (BusDBusImpl    *dbus,
-                                                 DBusMessage    *message,
+                                                 GDBusMessage   *message,
                                                  BusConnection  *skip_connection);
+#if 0
 gboolean         bus_dbus_impl_register_object  (BusDBusImpl    *dbus,
                                                  IBusService    *object);
 gboolean         bus_dbus_impl_unregister_object(BusDBusImpl    *dbus,

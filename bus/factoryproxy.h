@@ -48,19 +48,6 @@ G_BEGIN_DECLS
 typedef struct _BusFactoryProxy BusFactoryProxy;
 typedef struct _BusFactoryProxyClass BusFactoryProxyClass;
 
-struct _BusFactoryProxy {
-    IBusProxy parent;
-    /* instance members */
-
-    IBusComponent *component;
-    GList *engine_list;
-};
-
-struct _BusFactoryProxyClass {
-    IBusProxyClass parent;
-    /* class members */
-};
-
 GType            bus_factory_proxy_get_type     (void);
 BusFactoryProxy *bus_factory_proxy_new          (IBusComponent      *component,
                                                  BusConnection      *connection);

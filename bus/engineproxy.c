@@ -24,6 +24,30 @@
 #include "ibusimpl.h"
 #include "option.h"
 
+struct _BusEngineProxy {
+    IBusProxy parent;
+    /* instance members */
+    gboolean has_focus;
+    gboolean enabled;
+    guint capabilities;
+    /* cursor location */
+    gint x;
+    gint y;
+    gint w;
+    gint h;
+
+    IBusEngineDesc *desc;
+    IBusKeymap     *keymap;
+    IBusPropList *prop_list;
+
+    /* private member */
+};
+
+struct _BusEngineProxyClass {
+    IBusProxyClass parent;
+    /* class members */
+};
+
 enum {
     COMMIT_TEXT,
     FORWARD_KEY_EVENT,
@@ -45,7 +69,6 @@ enum {
     UPDATE_PROPERTY,
     LAST_SIGNAL,
 };
-
 
 static guint    engine_signals[LAST_SIGNAL] = { 0 };
 // static guint            engine_signals[LAST_SIGNAL] = { 0 };

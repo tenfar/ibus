@@ -24,6 +24,19 @@
 #include "dbusimpl.h"
 #include "option.h"
 
+struct _BusFactoryProxy {
+    IBusProxy parent;
+    /* instance members */
+
+    IBusComponent *component;
+    GList *engine_list;
+};
+
+struct _BusFactoryProxyClass {
+    IBusProxyClass parent;
+    /* class members */
+};
+
 /* functions prototype */
 static void      bus_factory_proxy_destroy      (BusFactoryProxy        *factory);
 
@@ -84,8 +97,8 @@ bus_factory_proxy_new (IBusComponent *component,
 
     factory = g_object_new (BUS_TYPE_FACTORY_PROXY,
                             "name", NULL,
-                            "path", "/org/freedesktop/IBus/Factory",
-                            "connection", connection,
+                            "object-path", "/org/freedesktop/IBus/Factory",
+                            "connection", bus_connection_get_dbus_connection (connection),
                             NULL);
 
     g_object_ref_sink (component);
@@ -102,7 +115,6 @@ bus_factory_proxy_new (IBusComponent *component,
 
     return factory;
 }
-
 
 IBusComponent *
 bus_factory_proxy_get_component (BusFactoryProxy *factory)
@@ -142,71 +154,28 @@ bus_factory_proxy_create_engine (BusFactoryProxy *factory,
     g_assert (BUS_IS_FACTORY_PROXY (factory));
     g_assert (IBUS_IS_ENGINE_DESC (desc));
 
-    IBusPendingCall *pending = NULL;
-    IBusMessage *reply_message;
-    IBusError *error;
-    BusEngineProxy *engine;
-    gchar *object_path;
-    gboolean retval;
-
     if (g_list_find (factory->component->engines, desc) == NULL) {
         return NULL;
     }
 
-    retval = ibus_proxy_call_with_reply ((IBusProxy *) factory,
-                                         "CreateEngine",
-                                         &pending,
-                                         g_dbus_timeout,
-                                         &error,
-                                         G_TYPE_STRING, &(desc->name),
-                                         G_TYPE_INVALID);
-
-    if (!retval) {
-        g_warning ("%s: %s", error->name, error->message);
-        ibus_error_free (error);
+    GError *error = NULL;
+    GVariant *retval = g_dbus_proxy_call_sync ((GDBusProxy *)factory,
+                                               "CreateEngine",
+                                               g_variant_new ("(s)", desc->name),
+                                               G_DBUS_CALL_FLAGS_NONE,
+                                               -1, NULL, &error);
+    if (retval == NULL) {
+        g_warning ("Create engine failed. %s", error->message);
+        g_error_free (error);
         return NULL;
     }
 
-    ibus_pending_call_wait (pending);
-    reply_message = ibus_pending_call_steal_reply (pending);
-    ibus_pending_call_unref (pending);
-
-    if (reply_message == NULL) {
-        IBusObject *connection;
-        connection = (IBusObject *) ibus_proxy_get_connection ((IBusProxy *)factory);
-        ibus_object_destroy (connection);
-        g_warning ("%s: %s", error->name, error->message);
-        ibus_error_free (error);
-        return NULL;
-    }
-
-    if ((error = ibus_error_new_from_message (reply_message)) != NULL) {
-        if (g_strcmp0 (error->name, DBUS_ERROR_NO_REPLY) == 0) {
-            IBusObject *connection;
-            connection = (IBusObject *) ibus_proxy_get_connection ((IBusProxy *)factory);
-            ibus_object_destroy (connection);
-        }
-        g_warning ("%s: %s", error->name, error->message);
-        ibus_error_free (error);
-        ibus_message_unref (reply_message);
-        return NULL;
-    }
-
-    if (!ibus_message_get_args (reply_message,
-                                &error,
-                                IBUS_TYPE_OBJECT_PATH, &object_path,
-                                G_TYPE_INVALID)) {
-        g_warning ("%s: %s", error->name, error->message);
-        ibus_error_free (error);
-        ibus_message_unref (reply_message);
-
-        return NULL;
-    }
-
-    IBusConnection *connection = ibus_proxy_get_connection ((IBusProxy *) factory);
-    engine = bus_engine_proxy_new (object_path, desc, (BusConnection *) connection);
-    ibus_message_unref (reply_message);
-
+    const gchar *object_path = NULL;
+    g_variant_get (retval, "(&o)", &object_path);
+    GDBusConnection *connection = g_dbus_proxy_get_connection ((GDBusProxy *) factory);
+    BusEngineProxy *engine = bus_engine_proxy_new (object_path,
+                    desc, bus_connection_lookup (connection));
+    g_variant_unref (retval);
     return engine;
 }
 

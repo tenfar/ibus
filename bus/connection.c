@@ -23,6 +23,24 @@
 #include "connection.h"
 #include "matchrule.h"
 
+struct _BusConnection {
+    IBusObject parent;
+
+    /* instance members */
+    GDBusConnection *connection;
+    gchar *unique_name;
+    /* list for well known names */
+    GList  *names;
+    GList  *rules;
+    guint  filter_id;
+};
+
+struct _BusConnectionClass {
+  IBusObjectClass parent;
+
+  /* class members */
+};
+
 // static guint            _signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */

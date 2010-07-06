@@ -25,6 +25,54 @@
 #include "engineproxy.h"
 #include "factoryproxy.h"
 
+struct _BusInputContext {
+    IBusService parent;
+
+    /* instance members */
+    BusConnection *connection;
+    BusEngineProxy *engine;
+    gchar *client;
+
+    gboolean has_focus;
+    gboolean enabled;
+
+    /* capabilities */
+    guint capabilities;
+
+    /* cursor location */
+    gint x;
+    gint y;
+    gint w;
+    gint h;
+
+    /* prev key event */
+    guint prev_keyval;
+    guint prev_modifiers;
+
+    /* preedit text */
+    IBusText *preedit_text;
+    guint     preedit_cursor_pos;
+    gboolean  preedit_visible;
+    guint     preedit_mode;
+
+    /* auxiliary text */
+    IBusText *auxiliary_text;
+    gboolean  auxiliary_visible;
+
+    /* lookup table */
+    IBusLookupTable *lookup_table;
+    gboolean lookup_table_visible;
+
+    /* filter release */
+    gboolean filter_release;
+};
+
+struct _BusInputContextClass {
+    IBusServiceClass parent;
+
+    /* class members */
+};
+
 enum {
     PROCESS_KEY_EVENT,
     SET_CURSOR_LOCATION,

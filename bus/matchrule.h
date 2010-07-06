@@ -47,35 +47,6 @@ G_BEGIN_DECLS
 typedef struct _BusMatchRule BusMatchRule;
 typedef struct _BusMatchRuleClass BusMatchRuleClass;
 
-typedef enum {
-    MATCH_TYPE          = 1 << 0,
-    MATCH_INTERFACE     = 1 << 1,
-    MATCH_MEMBER        = 1 << 2,
-    MATCH_SENDER        = 1 << 3,
-    MATCH_DESTINATION   = 1 << 4,
-    MATCH_PATH          = 1 << 5,
-    MATCH_ARGS          = 1 << 6,
-} BusMatchFlags;
-
-struct _BusMatchRule {
-    IBusObject parent;
-    /* instance members */
-    gint   flags;
-    gint   message_type;
-    gchar *interface;
-    gchar *member;
-    gchar *sender;
-    gchar *destination;
-    gchar *path;
-    GArray *args;
-    GList *recipients;
-};
-
-struct _BusMatchRuleClass {
-    IBusObjectClass parent;
-    /* class members */
-};
-
 GType            bus_match_rule_get_type    (void);
 BusMatchRule    *bus_match_rule_new         (const gchar        *text);
 BusMatchRule    *bus_match_rule_ref         (BusMatchRule       *rule);

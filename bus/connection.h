@@ -46,24 +46,6 @@ G_BEGIN_DECLS
 typedef struct _BusConnection BusConnection;
 typedef struct _BusConnectionClass BusConnectionClass;
 
-struct _BusConnection {
-    IBusObject parent;
-
-    /* instance members */
-    GDBusConnection *connection;
-    gchar *unique_name;
-    /* list for well known names */
-    GList  *names;
-    GList  *rules;
-    guint  filter_id;
-};
-
-struct _BusConnectionClass {
-  IBusObjectClass parent;
-
-  /* class members */
-};
-
 GType            bus_connection_get_type            (void);
 BusConnection   *bus_connection_new                 (GDBusConnection    *connection);
 BusConnection   *bus_connection_lookup              (GDBusConnection    *connection);

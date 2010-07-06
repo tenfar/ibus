@@ -97,6 +97,8 @@ ibus_daemon_SOURCES = \
 	engineproxy.c \
 	panelproxy.c \
 	inputcontext.c \
+	registry.c \
+	factoryproxy.c \
 	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \

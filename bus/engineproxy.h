@@ -48,30 +48,6 @@ G_BEGIN_DECLS
 typedef struct _BusEngineProxy BusEngineProxy;
 typedef struct _BusEngineProxyClass BusEngineProxyClass;
 
-struct _BusEngineProxy {
-    IBusProxy parent;
-    /* instance members */
-    gboolean has_focus;
-    gboolean enabled;
-    guint capabilities;
-    /* cursor location */
-    gint x;
-    gint y;
-    gint w;
-    gint h;
-
-    IBusEngineDesc *desc;
-    IBusKeymap     *keymap;
-    IBusPropList *prop_list;
-
-    /* private member */
-};
-
-struct _BusEngineProxyClass {
-    IBusProxyClass parent;
-    /* class members */
-};
-
 GType            bus_engine_proxy_get_type          (void);
 BusEngineProxy  *bus_engine_proxy_new               (const gchar           *path,
                                                      IBusEngineDesc        *desc,

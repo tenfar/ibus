@@ -625,7 +625,7 @@ bus_panel_proxy_focus_in (BusPanelProxy     *panel,
     g_object_ref_sink (context);
     panel->focused_context = context;
 
-    const gchar *path = ibus_service_get_path ((IBusService *)context);
+    const gchar *path = ibus_service_get_object_path ((IBusService *)context);
 
     g_dbus_proxy_call ((GDBusProxy *)panel,
                        "FocusIn",
@@ -660,7 +660,7 @@ bus_panel_proxy_focus_out (BusPanelProxy    *panel,
                                               panel);
     }
 
-    const gchar *path = ibus_service_get_path ((IBusService *)context);
+    const gchar *path = ibus_service_get_object_path ((IBusService *)context);
 
     g_dbus_proxy_call ((GDBusProxy *)panel,
                        "FocusOut",

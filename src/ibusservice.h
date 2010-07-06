@@ -120,13 +120,13 @@ GType            ibus_service_get_type          (void);
 IBusService     *ibus_service_new               (GDBusConnection    *connection,
                                                  const gchar        *path);
 /**
- * ibus_service_get_path:
+ * ibus_service_get_object_path:
  * @service: An IBusService.
  * @returns: The object path of @service
  *
  * Returns the object path of an IBusService.
  */
-const gchar     *ibus_service_get_path          (IBusService        *service);
+const gchar     *ibus_service_get_object_path   (IBusService        *service);
 
 /**
  * ibus_service_get_connections:

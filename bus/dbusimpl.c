@@ -58,6 +58,13 @@ struct _BusDBusImplClass {
                                     gchar           *new_name);
 };
 
+typedef struct _BusDispatchData BusDispatchData;
+struct _BusDispatchData {
+    GDBusMessage *message;
+    BusConnection *skip_connection;
+};
+
+
 /* functions prototype */
 static void     bus_dbus_impl_destroy           (BusDBusImpl        *dbus);
 static void     bus_dbus_impl_service_method_call
@@ -558,7 +565,7 @@ bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
     g_assert (name != NULL);
     g_assert (old_owner != NULL);
     g_assert (new_owner != NULL);
-    /* FIXME */
+
     GDBusMessage *message = g_dbus_message_new_signal ("/org/freedesktop/DBus",
                                                        "org.freedesktop.DBus",
                                                        "NameOwnerChanged");
@@ -742,17 +749,6 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
     return FALSE;
 }
 
-/* FIXME */
-#if 0
-static void
-_connection_ibus_message_sent_cb (BusConnection  *connection,
-                                  IBusMessage    *message,
-                                  BusDBusImpl    *dbus)
-{
-    bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
-}
-#endif
-
 BusDBusImpl *
 bus_dbus_impl_get_default (void)
 {
@@ -771,14 +767,6 @@ static void
 bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
                                      BusDBusImpl   *dbus)
 {
-    /* FIXME */
-#if 0
-    /*
-    ibus_service_remove_from_connection (
-                    IBUS_SERVICE (dbus),
-                    IBUS_CONNECTION (connection));
-    */
-
     const gchar *unique_name = bus_connection_get_unique_name (connection);
     if (unique_name != NULL) {
         g_hash_table_remove (dbus->unique_names, unique_name);
@@ -791,7 +779,6 @@ bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
     }
 
     const GList *name = bus_connection_get_names (connection);
-
     while (name != NULL) {
         g_hash_table_remove (dbus->names, name->data);
         g_signal_emit (dbus,
@@ -802,7 +789,7 @@ bus_dbus_impl_connection_destroy_cb (BusConnection *connection,
                        "");
         name = name->next;
     }
-#endif
+
     dbus->connections = g_list_remove (dbus->connections, connection);
     g_object_unref (connection);
 }
@@ -821,18 +808,7 @@ bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
 
     bus_connection_set_filter (connection,
                     bus_dbus_impl_connection_filter_cb, g_object_ref (dbus), g_object_unref);
-    /* FIXME */
-#if 0
-    g_signal_connect (connection,
-                      "ibus-message",
-                      G_CALLBACK (_connection_ibus_message_cb),
-                      dbus);
 
-    g_signal_connect (connection,
-                      "ibus-message-sent",
-                      G_CALLBACK (_connection_ibus_message_sent_cb),
-                      dbus);
-#endif
     g_signal_connect (connection,
                       "destroy",
                       G_CALLBACK (bus_dbus_impl_connection_destroy_cb),
@@ -898,12 +874,6 @@ bus_dbus_impl_forward_message (BusDBusImpl   *dbus,
     else
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
 }
-
-typedef struct _BusDispatchData BusDispatchData;
-struct _BusDispatchData {
-    GDBusMessage *message;
-    BusConnection *skip_connection;
-};
 
 static BusDispatchData *
 bus_dispatch_data_new (GDBusMessage *message,

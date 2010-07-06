@@ -95,6 +95,7 @@ ibus_daemon_SOURCES = \
 	marshalers.c \
 	connection.c \
 	engineproxy.c \
+	panelproxy.c \
 	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \

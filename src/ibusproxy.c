@@ -116,6 +116,14 @@ ibus_proxy_dispose (GObject *object)
 static void
 ibus_proxy_real_destroy (IBusProxy *proxy)
 {
+    GDBusConnection *connection = g_dbus_proxy_get_connection ((GDBusProxy *) proxy);
+    if (connection != NULL && !g_dbus_connection_is_closed (connection)) {
+        g_dbus_proxy_call ((GDBusProxy *)proxy,
+                           "org.freedesktop.IBus.Service.Destroy",
+                           NULL,
+                           G_DBUS_CALL_FLAGS_NONE,
+                           -1, NULL, NULL, NULL);
+    }
 }
 
 static void

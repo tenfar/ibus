@@ -27,7 +27,6 @@
 #include <locale.h>
 #include <string.h>
 #include <strings.h>
-#include <dbus/dbus.h>
 #include "ibusimpl.h"
 #include "dbusimpl.h"
 #include "server.h"
@@ -37,6 +36,41 @@
 #include "panelproxy.h"
 #include "inputcontext.h"
 #include "option.h"
+
+struct _BusIBusImpl {
+    IBusService parent;
+    /* instance members */
+
+    GHashTable *factory_dict;
+    GList *factory_list;
+    GList *contexts;
+
+    GList *engine_list;
+    GList *register_engine_list;
+    GList *component_list;
+
+    gboolean use_sys_layout;
+    gboolean embed_preedit_text;
+    gboolean enable_by_default;
+
+    BusRegistry     *registry;
+
+    BusInputContext *focused_context;
+    BusPanelProxy   *panel;
+    IBusConfig      *config;
+    IBusHotkeyProfile *hotkey_profile;
+    IBusKeymap      *keymap;
+
+    gboolean use_global_engine;
+    BusEngineProxy  *global_engine;
+    gchar           *global_previous_engine_name;
+};
+
+struct _BusIBusImplClass {
+    IBusServiceClass parent;
+
+    /* class members */
+};
 
 enum {
     LAST_SIGNAL,
@@ -129,21 +163,6 @@ static void     bus_ibus_impl_save_global_previous_engine_name_to_config
                                                 (BusIBusImpl        *ibus);
 
 G_DEFINE_TYPE(BusIBusImpl, bus_ibus_impl, IBUS_TYPE_SERVICE)
-
-BusIBusImpl *
-bus_ibus_impl_get_default (void)
-{
-    static BusIBusImpl *ibus = NULL;
-
-    if (ibus == NULL) {
-        ibus = (BusIBusImpl *) g_object_new (BUS_TYPE_IBUS_IMPL,
-                                             "path", IBUS_PATH_IBUS,
-                                             NULL);
-        bus_dbus_impl_register_object (BUS_DEFAULT_DBUS,
-                                       (IBusService *)ibus);
-    }
-    return ibus;
-}
 
 static void
 bus_ibus_impl_class_init (BusIBusImplClass *klass)
@@ -1732,6 +1751,21 @@ bus_ibus_impl_ibus_message (BusIBusImpl     *ibus,
                                     (IBusService *) ibus,
                                     (IBusConnection *) connection,
                                     message);
+}
+
+BusIBusImpl *
+bus_ibus_impl_get_default (void)
+{
+    static BusIBusImpl *ibus = NULL;
+
+    if (ibus == NULL) {
+        ibus = (BusIBusImpl *) g_object_new (BUS_TYPE_IBUS_IMPL,
+                                             "path", IBUS_PATH_IBUS,
+                                             NULL);
+        bus_dbus_impl_register_object (BUS_DEFAULT_DBUS,
+                                       (IBusService *)ibus);
+    }
+    return ibus;
 }
 
 BusFactoryProxy *

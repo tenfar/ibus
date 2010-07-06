@@ -61,41 +61,6 @@ G_BEGIN_DECLS
 typedef struct _BusIBusImpl BusIBusImpl;
 typedef struct _BusIBusImplClass BusIBusImplClass;
 
-struct _BusIBusImpl {
-    IBusService parent;
-    /* instance members */
-
-    GHashTable *factory_dict;
-    GList *factory_list;
-    GList *contexts;
-
-    GList *engine_list;
-    GList *register_engine_list;
-    GList *component_list;
-
-    gboolean use_sys_layout;
-    gboolean embed_preedit_text;
-    gboolean enable_by_default;
-
-    BusRegistry     *registry;
-
-    BusInputContext *focused_context;
-    BusPanelProxy   *panel;
-    IBusConfig      *config;
-    IBusHotkeyProfile *hotkey_profile;
-    IBusKeymap      *keymap;
-
-    gboolean use_global_engine;
-    BusEngineProxy  *global_engine;
-    gchar           *global_previous_engine_name;
-};
-
-struct _BusIBusImplClass {
-    IBusServiceClass parent;
-
-    /* class members */
-};
-
 GType            bus_ibus_impl_get_type             (void);
 BusIBusImpl     *bus_ibus_impl_get_default          (void);
 BusFactoryProxy *bus_ibus_impl_get_default_factory  (BusIBusImpl        *ibus);

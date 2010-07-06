@@ -84,7 +84,7 @@ enum {
 
 /* functions prototype */
 static void      bus_ibus_impl_destroy           (BusIBusImpl        *ibus);
-static void      ibus_engine_service_method_call
+static void      bus_ibus_impl_service_method_call
                                               (IBusService        *service,
                                                GDBusConnection    *connection,
                                                const gchar        *sender,
@@ -94,7 +94,9 @@ static void      ibus_engine_service_method_call
                                                GVariant           *parameters,
                                                GDBusMethodInvocation
                                                                   *invocation);
-static GVariant *ibus_engine_service_get_property
+/* FIXME */
+#if 0
+static GVariant *ibus_ibus_impl_service_get_property
                                              (IBusService        *service,
                                               GDBusConnection    *connection,
                                               const gchar        *sender,
@@ -102,7 +104,7 @@ static GVariant *ibus_engine_service_get_property
                                               const gchar        *interface_name,
                                               const gchar        *property_name,
                                               GError            **error);
-static gboolean  ibus_engine_service_set_property
+static gboolean  ibus_ibus_impl_service_set_property
                                              (IBusService        *service,
                                               GDBusConnection    *connection,
                                               const gchar        *sender,
@@ -111,33 +113,32 @@ static gboolean  ibus_engine_service_set_property
                                               const gchar        *property_name,
                                               GVariant           *value,
                                               GError            **error);
+#endif
 static void     bus_ibus_impl_add_factory       (BusIBusImpl        *ibus,
                                                  BusFactoryProxy    *factory);
 static void     bus_ibus_impl_set_trigger       (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_next_engine_in_menu
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_previous_engine
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
-
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_preload_engines
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_use_sys_layout
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_embed_preedit_text
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_enable_by_default
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
-
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_use_global_engine
                                                 (BusIBusImpl        *ibus,
-                                                 GValue             *value);
+                                                 GVariant           *value);
 static void     bus_ibus_impl_set_global_engine (BusIBusImpl        *ibus,
                                                  BusEngineProxy     *engine);
 
@@ -162,17 +163,67 @@ static gchar   *bus_ibus_impl_load_global_previous_engine_name_from_config
 static void     bus_ibus_impl_save_global_previous_engine_name_to_config
                                                 (BusIBusImpl        *ibus);
 
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.freedesktop.IBus'>"
+    "    <method name='GetAddress'>"
+    "      <arg direction='out' type='s' name='address' />"
+    "    </method>"
+    "    <method name='CreateInputContext'>"
+    "      <arg direction='in'  type='s' name='app_name' />"
+    "      <arg direction='out' type='o' name='object_path' />"
+    "    </method>"
+    "    <method name='CurrentInputContext'>"
+    "      <arg direction='out' type='o' name='object_path' />"
+    "    </method>"
+    "    <method name='RegisterComponent'>"
+    "      <arg direction='in'  type='v' name='component' />"
+    "    </method>"
+    "    <method name='ListEngines'>"
+    "      <arg direction='out' type='av' name='engines' />"
+    "    </method>"
+    "    <method name='ListActiveEngines'>"
+    "      <arg direction='out' type='av' name='engines' />"
+    "    </method>"
+    "    <method name='Exit'>"
+    "      <arg direction='in'  type='b' name='restart' />"
+    "    </method>"
+    "    <method name='Ping'>"
+    "      <arg direction='in'  type='v' name='data' />"
+    "      <arg direction='out' type='v' name='data' />"
+    "    </method>"
+    "    <method name='GetUseSysLayout'>"
+    "      <arg direction='out' type='b' name='enabled' />"
+    "    </method>"
+    "    <method name='GetUseGlobalEngine'>"
+    "      <arg direction='out' type='b' name='enabled' />"
+    "    </method>"
+    "    <method name='GetGlobalEngine'>"
+    "      <arg direction='out' type='v' name='desc' />"
+    "    </method>"
+    "    <method name='SetGlobalEngine'>"
+    "      <arg direction='in'  type='s' name='engine_name' />"
+    "    </method>"
+    "    <method name='IsGlobalEngineEnabled'>"
+    "      <arg direction='out' type='b' name='enabled' />"
+    "    </method>"
+    "    <signal name='RegistryChanged'>"
+    "    </signal>"
+    "    <signal name='GlobalEngineChanged'>"
+    "    </signal>"
+    "  </interface>"
+    "</node>";
+
+
 G_DEFINE_TYPE(BusIBusImpl, bus_ibus_impl, IBUS_TYPE_SERVICE)
 
 static void
-bus_ibus_impl_class_init (BusIBusImplClass *klass)
+bus_ibus_impl_class_init (BusIBusImplClass *class)
 {
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
+    IBUS_OBJECT_CLASS(class)->destroy = (IBusObjectDestroyFunc) bus_ibus_impl_destroy;
 
-    ibus_object_class->destroy = (IBusObjectDestroyFunc) bus_ibus_impl_destroy;
-
-    IBUS_SERVICE_CLASS (klass)->ibus_message = (ServiceIBusMessageFunc) bus_ibus_impl_ibus_message;
-
+    IBUS_SERVICE_CLASS (class)->service_method_call = bus_ibus_impl_service_method_call;
+    ibus_service_class_add_interfaces (IBUS_SERVICE_CLASS (class), introspection_xml);
 }
 
 static void
@@ -191,12 +242,9 @@ _panel_destroy_cb (BusPanelProxy *panel,
 static void
 bus_ibus_impl_set_hotkey (BusIBusImpl *ibus,
                           GQuark       hotkey,
-                          GValue      *value)
+                          GVariant     *value)
 {
     g_assert (BUS_IS_IBUS_IMPL (ibus));
-
-    GValueArray *array;
-    gint i;
 
     ibus_hotkey_profile_remove_hotkey_by_event (ibus->hotkey_profile, hotkey);
 
@@ -204,29 +252,27 @@ bus_ibus_impl_set_hotkey (BusIBusImpl *ibus,
         return;
     }
 
-    g_return_if_fail (G_VALUE_TYPE (value) == G_TYPE_VALUE_ARRAY);
-    array = g_value_get_boxed (value);
-
-    for (i = 0; i < array->n_values; i++) {
-       GValue *str;
-
-       str = g_value_array_get_nth (array, i);
-       g_return_if_fail (G_VALUE_TYPE (str) == G_TYPE_STRING);
-
+    GVariantIter iter;
+    g_variant_iter_init (&iter, value);
+    const gchar *str = NULL;
+    while (g_variant_iter_loop (&iter,"&s", &str)) {
        ibus_hotkey_profile_add_hotkey_from_string (ibus->hotkey_profile,
-                                                   g_value_get_string (str),
+                                                   str,
                                                    hotkey);
-   }
+    }
 
 }
 
 static void
 bus_ibus_impl_set_trigger (BusIBusImpl *ibus,
-                           GValue      *value)
+                           GVariant    *value)
 {
     GQuark hotkey = g_quark_from_static_string ("trigger");
-    bus_ibus_impl_set_hotkey (ibus, hotkey, value);
-    if (value == NULL) {
+    if (value != NULL) {
+        bus_ibus_impl_set_hotkey (ibus, hotkey, value);
+    }
+    else {
+        /* set defaint trigger */
         ibus_hotkey_profile_add_hotkey (ibus->hotkey_profile,
                                         IBUS_space,
                                         IBUS_CONTROL_MASK,
@@ -236,7 +282,7 @@ bus_ibus_impl_set_trigger (BusIBusImpl *ibus,
 
 static void
 bus_ibus_impl_set_next_engine_in_menu (BusIBusImpl *ibus,
-                                       GValue      *value)
+                                       GVariant     *value)
 {
     GQuark hotkey = g_quark_from_static_string ("next-engine-in-menu");
     bus_ibus_impl_set_hotkey (ibus, hotkey, value);
@@ -244,7 +290,7 @@ bus_ibus_impl_set_next_engine_in_menu (BusIBusImpl *ibus,
 
 static void
 bus_ibus_impl_set_previous_engine (BusIBusImpl *ibus,
-                                   GValue      *value)
+                                   GVariant    *value)
 {
     GQuark hotkey = g_quark_from_static_string ("previous-engine");
     bus_ibus_impl_set_hotkey (ibus, hotkey, value);
@@ -252,32 +298,21 @@ bus_ibus_impl_set_previous_engine (BusIBusImpl *ibus,
 
 static void
 bus_ibus_impl_set_preload_engines (BusIBusImpl *ibus,
-                                   GValue      *value)
+                                   GVariant    *value)
 {
     GList *engine_list = NULL;
 
     g_list_foreach (ibus->engine_list, (GFunc) g_object_unref, NULL);
     g_list_free (ibus->engine_list);
 
-    if (value != NULL && G_VALUE_TYPE (value) == G_TYPE_VALUE_ARRAY) {
-        GValueArray *array;
-        gint i;
-
-        array = (GValueArray *) g_value_get_boxed (value);
-        for (i = 0; array && i < array->n_values; i++) {
-            const gchar *engine_name;
-            IBusEngineDesc *engine;
-
-            if (G_VALUE_TYPE (&array->values[i]) != G_TYPE_STRING)
-                continue;
-
-            engine_name = g_value_get_string (&array->values[i]);
-
-            engine = bus_registry_find_engine_by_name (ibus->registry, engine_name);
-
+    if (value != NULL && g_variant_classify (value) == G_VARIANT_CLASS_ARRAY) {
+        GVariantIter iter;
+        g_variant_iter_init (&iter, value);
+        const gchar *engine_name = NULL;
+        while (g_variant_iter_loop (&iter, "&s", &engine_name)) {
+            IBusEngineDesc *engine = bus_registry_find_engine_by_name (ibus->registry, engine_name);
             if (engine == NULL || g_list_find (engine_list, engine) != NULL)
                 continue;
-
             engine_list = g_list_append (engine_list, engine);
         }
     }
@@ -286,9 +321,7 @@ bus_ibus_impl_set_preload_engines (BusIBusImpl *ibus,
     ibus->engine_list = engine_list;
 
     if (ibus->engine_list) {
-        IBusComponent *component;
-
-        component = ibus_component_get_from_engine ((IBusEngineDesc *) ibus->engine_list->data);
+        IBusComponent *component = ibus_component_get_from_engine ((IBusEngineDesc *) ibus->engine_list->data);
         if (component && !ibus_component_is_running (component)) {
             ibus_component_start (component, g_verbose);
         }
@@ -297,53 +330,48 @@ bus_ibus_impl_set_preload_engines (BusIBusImpl *ibus,
 
 static void
 bus_ibus_impl_set_use_sys_layout (BusIBusImpl *ibus,
-                                  GValue      *value)
+                                  GVariant    *value)
 {
-    if (value != NULL && G_VALUE_TYPE (value) == G_TYPE_BOOLEAN) {
-        ibus->use_sys_layout = g_value_get_boolean (value);
+    if (value != NULL && g_variant_classify (value) == G_VARIANT_CLASS_BOOLEAN) {
+        ibus->use_sys_layout = g_variant_get_boolean (value);
     }
 }
 
 static void
 bus_ibus_impl_set_embed_preedit_text (BusIBusImpl *ibus,
-                                      GValue      *value)
+                                      GVariant    *value)
 {
-    if (value != NULL && G_VALUE_TYPE (value) == G_TYPE_BOOLEAN) {
-        ibus->embed_preedit_text = g_value_get_boolean (value);
+    if (value != NULL && g_variant_classify (value) == G_VARIANT_CLASS_BOOLEAN) {
+        ibus->embed_preedit_text = g_variant_get_boolean (value);
     }
 }
 
 static void
 bus_ibus_impl_set_enable_by_default (BusIBusImpl *ibus,
-                                     GValue      *value)
+                                     GVariant    *value)
 {
-    if (value != NULL && G_VALUE_TYPE (value) == G_TYPE_BOOLEAN) {
-        ibus->enable_by_default = g_value_get_boolean (value);
+    if (value != NULL && g_variant_classify (value) == G_VARIANT_CLASS_BOOLEAN) {
+        ibus->enable_by_default = g_variant_get_boolean (value);
     }
 }
 
 static void
 bus_ibus_impl_set_use_global_engine (BusIBusImpl *ibus,
-                                     GValue      *value)
+                                     GVariant    *value)
 {
-    gboolean new_value;
-
-    if (value == NULL || G_VALUE_TYPE (value) != G_TYPE_BOOLEAN) {
+    if (value == NULL || g_variant_classify (value) != G_VARIANT_CLASS_BOOLEAN)
         return;
-    }
 
-    new_value = g_value_get_boolean (value);
-    if (ibus->use_global_engine == new_value) {
+    gboolean new_value = g_variant_get_boolean (value);
+    if (ibus->use_global_engine == new_value)
         return;
-    }
 
-    if (new_value == TRUE) {
-        BusEngineProxy *engine;
+    if (new_value) {
         /* turn on use_global_engine option */
         ibus->use_global_engine = TRUE;
-        engine = ibus->focused_context != NULL ?
+        BusEngineProxy *engine = ibus->focused_context != NULL ?
                     bus_input_context_get_engine (ibus->focused_context) : NULL;
-        if (engine) {
+        if (engine != NULL) {
             bus_ibus_impl_set_global_engine (ibus, engine);
         }
     }
@@ -351,7 +379,6 @@ bus_ibus_impl_set_use_global_engine (BusIBusImpl *ibus,
         /* turn off use_global_engine option */
         bus_ibus_impl_set_global_engine (ibus, NULL);
         ibus->use_global_engine = FALSE;
-
         g_free (ibus->global_previous_engine_name);
     }
 }
@@ -369,29 +396,26 @@ bus_ibus_impl_set_default_preload_engines (BusIBusImpl *ibus)
     g_assert (BUS_IS_IBUS_IMPL (ibus));
 
     static gboolean done = FALSE;
-    GValue value = { 0 };
-    GList *engines, *list;
-    gchar *lang, *p;
-    GValueArray *array;
 
     if (done || ibus->config == NULL) {
         return;
     }
 
-    if (ibus_config_get_value (ibus->config, "general", "preload_engines", &value)) {
+    GVariant *variant = ibus_config_get_value (ibus->config, "general", "preload_engines");
+    if (variant != NULL) {
         done = TRUE;
-        g_value_unset (&value);
+        g_variant_unref (variant);
         return;
     }
 
     done = TRUE;
-    lang = g_strdup (setlocale (LC_ALL, NULL));
-    p = index (lang, '.');
+    gchar *lang = g_strdup (setlocale (LC_ALL, NULL));
+    gchar *p = index (lang, '.');
     if (p) {
         *p = '\0';
     }
 
-    engines = bus_registry_get_engines_by_language (ibus->registry, lang);
+    GList *engines = bus_registry_get_engines_by_language (ibus->registry, lang);
     if (engines == NULL) {
         p = index (lang, '_');
         if (p) {
@@ -404,25 +428,34 @@ bus_ibus_impl_set_default_preload_engines (BusIBusImpl *ibus)
     /* sort engines by rank */
     engines = g_list_sort (engines, (GCompareFunc) _engine_desc_cmp);
 
-    g_value_init (&value, G_TYPE_VALUE_ARRAY);
-    array = g_value_array_new (5);
+    GVariantBuilder builder;
+    g_variant_builder_init (&builder, G_VARIANT_TYPE ("as"));
+    GList *list;
     for (list = engines; list != NULL; list = list->next) {
-        IBusEngineDesc *desc;
-        GValue name = { 0 };
-        desc = (IBusEngineDesc *)list->data;
-
+        IBusEngineDesc *desc = (IBusEngineDesc *)list->data;
         /* ignore engines with rank <== 0 */
-        if (desc->rank <= 0)
-            break;
-        g_value_init (&name, G_TYPE_STRING);
-        g_value_set_string (&name, desc->name);
-        g_value_array_append (array, &name);
+        if (desc->rank > 0)
+            g_variant_builder_add (&builder, "s", desc->name);
     }
-    g_value_take_boxed (&value, array);
-    ibus_config_set_value (ibus->config, "general", "preload_engines", &value);
-    g_value_unset (&value);
+    ibus_config_set_value (ibus->config,
+                    "general", "preload_engines", g_variant_builder_end (&builder));
     g_list_free (engines);
 }
+
+const static struct {
+    gchar *section;
+    gchar *key;
+    void ( *func) (BusIBusImpl *, GVariant *);
+} bus_ibus_impl_config_items [] = {
+    { "general/hotkey", "trigger",              bus_ibus_impl_set_trigger },
+    { "general/hotkey", "next_engine_in_menu",  bus_ibus_impl_set_next_engine_in_menu },
+    { "general/hotkey", "previous_engine",      bus_ibus_impl_set_previous_engine },
+    { "general", "preload_engines",             bus_ibus_impl_set_preload_engines },
+    { "general", "use_system_keyboard_layout",  bus_ibus_impl_set_use_sys_layout },
+    { "general", "use_global_engine",           bus_ibus_impl_set_use_global_engine },
+    { "general", "embed_preedit_text",          bus_ibus_impl_set_embed_preedit_text },
+    { "general", "enable_by_default",           bus_ibus_impl_set_enable_by_default },
+};
 
 static void
 bus_ibus_impl_reload_config (BusIBusImpl *ibus)
@@ -430,43 +463,14 @@ bus_ibus_impl_reload_config (BusIBusImpl *ibus)
     g_assert (BUS_IS_IBUS_IMPL (ibus));
 
     gint i;
-    GValue value = { 0 };
-
-    const static struct {
-        gchar *section;
-        gchar *key;
-        void ( *func) (BusIBusImpl *, GValue *);
-    } entries [] = {
-        { "general/hotkey", "trigger", bus_ibus_impl_set_trigger },
-        #if 0
-        /* Only for backward compatibility, shall be removed later. */
-        { "general/hotkey", "next_engine", bus_ibus_impl_set_next_engine_in_menu },
-        #endif
-        { "general/hotkey", "next_engine_in_menu", bus_ibus_impl_set_next_engine_in_menu },
-        #if 0
-        /* Only for backward compatibility, shall be removed later. */
-        { "general/hotkey", "prev_engine", bus_ibus_impl_set_previous_engine },
-        #endif
-        { "general/hotkey", "previous_engine", bus_ibus_impl_set_previous_engine },
-        { "general", "preload_engines", bus_ibus_impl_set_preload_engines },
-        { "general", "use_system_keyboard_layout", bus_ibus_impl_set_use_sys_layout },
-        { "general", "use_global_engine", bus_ibus_impl_set_use_global_engine },
-        { "general", "embed_preedit_text", bus_ibus_impl_set_embed_preedit_text },
-        { "general", "enable_by_default", bus_ibus_impl_set_enable_by_default },
-    };
-
-    for (i = 0; i < G_N_ELEMENTS (entries); i++) {
-        if (ibus->config != NULL &&
-            ibus_config_get_value (ibus->config,
-                                   entries[i].section,
-                                   entries[i].key,
-                                   &value)) {
-            entries[i].func (ibus, &value);
-            g_value_unset (&value);
-        }
-        else {
-            entries[i].func (ibus, NULL);
-        }
+    for (i = 0; i < G_N_ELEMENTS (bus_ibus_impl_config_items); i++) {
+        GVariant *variant = NULL;
+        if (ibus->config != NULL)
+            variant = ibus_config_get_value (ibus->config,
+                            bus_ibus_impl_config_items[i].section,
+                            bus_ibus_impl_config_items[i].key);
+        bus_ibus_impl_config_items[i].func (ibus, variant);
+        if (variant) g_variant_unref (variant);
     }
 }
 
@@ -474,7 +478,7 @@ static void
 _config_value_changed_cb (IBusConfig  *config,
                           gchar       *section,
                           gchar       *key,
-                          GValue      *value,
+                          GVariant    *value,
                           BusIBusImpl *ibus)
 {
     g_assert (IBUS_IS_CONFIG (config));
@@ -484,34 +488,10 @@ _config_value_changed_cb (IBusConfig  *config,
     g_assert (BUS_IS_IBUS_IMPL (ibus));
 
     gint i;
-
-    const static struct {
-        gchar *section;
-        gchar *key;
-        void ( *func) (BusIBusImpl *, GValue *);
-    } entries [] = {
-        { "general/hotkey", "trigger", bus_ibus_impl_set_trigger },
-        #if 0
-        /* Only for backward compatibility, shall be removed later. */
-        { "general/hotkey", "next_engine", bus_ibus_impl_set_next_engine_in_menu },
-        #endif
-        { "general/hotkey", "next_engine_in_menu", bus_ibus_impl_set_next_engine_in_menu },
-        #if 0
-        /* Only for backward compatibility, shall be removed later. */
-        { "general/hotkey", "prev_engine", bus_ibus_impl_set_previous_engine },
-        #endif
-        { "general/hotkey", "previous_engine", bus_ibus_impl_set_previous_engine },
-        { "general", "preload_engines",    bus_ibus_impl_set_preload_engines },
-        { "general", "use_system_keyboard_layout", bus_ibus_impl_set_use_sys_layout },
-        { "general", "use_global_engine", bus_ibus_impl_set_use_global_engine },
-        { "general", "embed_preedit_text", bus_ibus_impl_set_embed_preedit_text },
-        { "general", "enable_by_default", bus_ibus_impl_set_enable_by_default },
-    };
-
-    for (i = 0; i < G_N_ELEMENTS (entries); i++) {
-        if (g_strcmp0 (entries[i].section, section) == 0 &&
-            g_strcmp0 (entries[i].key, key) == 0) {
-            entries[i].func (ibus, value);
+    for (i = 0; i < G_N_ELEMENTS (bus_ibus_impl_config_items); i++) {
+        if (g_strcmp0 (bus_ibus_impl_config_items[i].section, section) == 0 &&
+            g_strcmp0 (bus_ibus_impl_config_items[i].key, key) == 0) {
+            bus_ibus_impl_config_items[i].func (ibus, value);
             break;
         }
     }
@@ -735,101 +715,17 @@ bus_ibus_impl_destroy (BusIBusImpl *ibus)
 
     g_free (ibus->global_previous_engine_name);
 
-    bus_server_quit (BUS_DEFAULT_SERVER);
-    ibus_object_destroy ((IBusObject *) BUS_DEFAULT_SERVER);
+    bus_server_quit ();
     IBUS_OBJECT_CLASS(bus_ibus_impl_parent_class)->destroy (IBUS_OBJECT (ibus));
 }
 
-/* introspectable interface */
-static IBusMessage *
-_ibus_introspect (BusIBusImpl     *ibus,
-                  IBusMessage     *message,
-                  BusConnection   *connection)
+static void
+_ibus_get_address (BusIBusImpl           *ibus,
+                   GVariant              *parameters,
+                   GDBusMethodInvocation *invocation)
 {
-    static const gchar *introspect =
-        DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
-        "<node>\n"
-        "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
-        "    <method name=\"Introspect\">\n"
-        "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-        "  </interface>\n"
-        "  <interface name=\"org.freedesktop.IBus\">\n"
-        "    <method name=\"GetAddress\">\n"
-        "      <arg name=\"address\" direction=\"out\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <method name=\"CreateInputContext\">\n"
-        "      <arg name=\"name\" direction=\"in\" type=\"s\"/>\n"
-        "      <arg name=\"context\" direction=\"out\" type=\"o\"/>\n"
-        "    </method>\n"
-        "    <method name=\"CurrentInputContext\">\n"
-        "      <arg name=\"name\" direction=\"out\" type=\"o\"/>\n"
-        "    </method>\n"
-        "    <method name=\"RegisterComponent\">\n"
-        "      <arg name=\"components\" direction=\"in\" type=\"v\"/>\n"
-        "    </method>\n"
-        "    <method name=\"ListEngines\">\n"
-        "      <arg name=\"engines\" direction=\"out\" type=\"av\"/>\n"
-        "    </method>\n"
-        "    <method name=\"ListActiveEngines\">\n"
-        "      <arg name=\"engines\" direction=\"out\" type=\"av\"/>\n"
-        "    </method>\n"
-        "    <method name=\"Exit\">\n"
-        "      <arg name=\"restart\" direction=\"in\" type=\"b\"/>\n"
-        "    </method>\n"
-        "    <method name=\"Ping\">\n"
-        "      <arg name=\"data\" direction=\"in\" type=\"v\"/>\n"
-        "      <arg name=\"data\" direction=\"out\" type=\"v\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetUseSysLayout\">\n"
-        "      <arg name=\"enable\" direction=\"out\" type=\"b\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetUseGlobalEngine\">\n"
-        "      <arg name=\"enable\" direction=\"out\" type=\"b\"/>\n"
-        "    </method>\n"
-        "    <method name=\"GetGlobalEngine\">\n"
-        "      <arg name=\"desc\" direction=\"out\" type=\"v\"/>\n"
-        "    </method>\n"
-        "    <method name=\"SetGlobalEngine\">\n"
-        "      <arg name=\"name\" direction=\"in\" type=\"s\"/>\n"
-        "    </method>\n"
-        "    <method name=\"IsGlobalEngineEnabled\">\n"
-        "      <arg name=\"enable\" direction=\"out\" type=\"b\"/>\n"
-        "    </method>\n"
-        "    <signal name=\"RegistryChanged\">\n"
-        "    </signal>\n"
-        "    <signal name=\"GlobalEngineChanged\">\n"
-        "    </signal>\n"
-        "  </interface>\n"
-        "</node>\n";
-
-    IBusMessage *reply_message;
-    reply_message = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply_message,
-                              G_TYPE_STRING, &introspect,
-                              G_TYPE_INVALID);
-
-    return reply_message;
-}
-
-
-
-static IBusMessage *
-_ibus_get_address (BusIBusImpl     *ibus,
-                   IBusMessage     *message,
-                   BusConnection   *connection)
-{
-    const gchar *address;
-    IBusMessage *reply;
-
-    address = ibus_server_get_address (IBUS_SERVER (BUS_DEFAULT_SERVER));
-
-    reply = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply,
-                              G_TYPE_STRING, &address,
-                              G_TYPE_INVALID);
-
-    return reply;
+    /* FIXME */
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", "FIXME"));
 }
 
 static BusEngineProxy *
@@ -1684,73 +1580,55 @@ _ibus_is_global_engine_enabled (BusIBusImpl     *ibus,
     return reply;
 }
 
-
-static gboolean
-bus_ibus_impl_ibus_message (BusIBusImpl     *ibus,
-                            BusConnection   *connection,
-                            IBusMessage     *message)
+static void
+bus_ibus_impl_service_method_call (IBusService           *service,
+                                   GDBusConnection       *connection,
+                                   const gchar           *sender,
+                                   const gchar           *object_path,
+                                   const gchar           *interface_name,
+                                   const gchar           *method_name,
+                                   GVariant              *parameters,
+                                   GDBusMethodInvocation *invocation)
 {
     g_assert (BUS_IS_IBUS_IMPL (ibus));
     g_assert (BUS_IS_CONNECTION (connection));
     g_assert (message != NULL);
 
-    gint i;
-    IBusMessage *reply_message = NULL;
-
-    static const struct {
-        const gchar *interface;
-        const gchar *name;
-        IBusMessage *(* handler) (BusIBusImpl *, IBusMessage *, BusConnection *);
-    } handlers[] =  {
-        /* Introspectable interface */
-        { DBUS_INTERFACE_INTROSPECTABLE,
-                               "Introspect",            _ibus_introspect },
-        /* IBus interface */
-        { IBUS_INTERFACE_IBUS, "GetAddress",            _ibus_get_address },
-        { IBUS_INTERFACE_IBUS, "CreateInputContext",    _ibus_create_input_context },
-        { IBUS_INTERFACE_IBUS, "CurrentInputContext",   _ibus_current_input_context },
-        { IBUS_INTERFACE_IBUS, "RegisterComponent",     _ibus_register_component },
-        { IBUS_INTERFACE_IBUS, "ListEngines",           _ibus_list_engines },
-        { IBUS_INTERFACE_IBUS, "ListActiveEngines",     _ibus_list_active_engines },
-        { IBUS_INTERFACE_IBUS, "Exit",                  _ibus_exit },
-        { IBUS_INTERFACE_IBUS, "Ping",                  _ibus_ping },
-        { IBUS_INTERFACE_IBUS, "GetUseSysLayout",       _ibus_get_use_sys_layout },
-        { IBUS_INTERFACE_IBUS, "GetUseGlobalEngine",    _ibus_get_use_global_engine },
-        { IBUS_INTERFACE_IBUS, "GetGlobalEngine",       _ibus_get_global_engine },
-        { IBUS_INTERFACE_IBUS, "SetGlobalEngine",       _ibus_set_global_engine },
-        { IBUS_INTERFACE_IBUS, "IsGlobalEngineEnabled", _ibus_is_global_engine_enabled },
-    };
-
-    ibus_message_set_sender (message, bus_connection_get_unique_name (connection));
-    ibus_message_set_destination (message, DBUS_SERVICE_DBUS);
-
-    if (ibus_message_get_type (message) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
-        for (i = 0; i < G_N_ELEMENTS (handlers); i++) {
-            if (ibus_message_is_method_call (message,
-                                             handlers[i].interface,
-                                             handlers[i].name)) {
-
-                reply_message = handlers[i].handler (ibus, message, connection);
-                if (reply_message) {
-
-                    ibus_message_set_sender (reply_message, DBUS_SERVICE_DBUS);
-                    ibus_message_set_destination (reply_message, bus_connection_get_unique_name (connection));
-                    ibus_message_set_no_reply (reply_message, TRUE);
-
-                    ibus_connection_send ((IBusConnection *) connection, reply_message);
-                    ibus_message_unref (reply_message);
-                }
-
-                g_signal_stop_emission_by_name (ibus, "ibus-message");
-                return TRUE;
-            }
-        }
+    if (g_strcmp0 (interface_name, "org.freedesktop.IBus") != 0) {
+        IBUS_SERVICE_CLASS(bus_ibus_impl_parent_class)->service_method_call (
+                        service, connection, sender, object_path, interface_name, method_name,
+                        parameters, incocation);
+        return;
     }
 
-    return IBUS_SERVICE_CLASS(bus_ibus_impl_parent_class)->ibus_message (
-                                    (IBusService *) ibus,
-                                    (IBusConnection *) connection,
-                                    message);
+    static const struct {
+        const gchar *method_name;
+        void (* method_call) (BusIBusImpl *, GVariant *, GDBusMethodInocation *);
+    } methods [] =  {
+        /* IBus interface */
+        { "GetAddress",            _ibus_get_address },
+        { "CreateInputContext",    _ibus_create_input_context },
+        { "CurrentInputContext",   _ibus_current_input_context },
+        { "RegisterComponent",     _ibus_register_component },
+        { "ListEngines",           _ibus_list_engines },
+        { "ListActiveEngines",     _ibus_list_active_engines },
+        { "Exit",                  _ibus_exit },
+        { "Ping",                  _ibus_ping },
+        { "GetUseSysLayout",       _ibus_get_use_sys_layout },
+        { "GetUseGlobalEngine",    _ibus_get_use_global_engine },
+        { "GetGlobalEngine",       _ibus_get_global_engine },
+        { "SetGlobalEngine",       _ibus_set_global_engine },
+        { "IsGlobalEngineEnabled", _ibus_is_global_engine_enabled },
+    };
+
+    gint i;
+    for (i = 0; i < G_N_ELEMENTS (methods); i++) {
+        if (g_strcmp0 (methods[i].method_name, method_name) == 0) {
+            methods[i].method_callback (ibus, parameter, invocation);
+            return;
+        }
+    }
+    g_return_if_reached ();
 }
 
 BusIBusImpl *

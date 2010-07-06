@@ -84,6 +84,8 @@ static const GOptionEntry entries[] =
     { NULL },
 };
 
+/* FIXME */
+#if 0
 static gboolean
 execute_cmdline (const gchar *cmdline)
 {
@@ -113,6 +115,7 @@ execute_cmdline (const gchar *cmdline)
 
     return TRUE;
 }
+#endif
 
 #ifndef HAVE_DAEMON
 static void

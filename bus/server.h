@@ -25,7 +25,8 @@
 
 G_BEGIN_DECLS
 
-void bus_server_start (void);
+void    bus_server_start   (void);
+void    bus_server_quit    (void);
 
 G_END_DECLS
 #endif

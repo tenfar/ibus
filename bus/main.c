@@ -89,12 +89,9 @@ execute_cmdline (const gchar *cmdline)
 {
     g_assert (cmdline);
 
-    gint argc;
-    gchar **argv;
-    gboolean retval;
-    GError *error;
-
-    error = NULL;
+    gint argc = 0;
+    gchar **argv = NULL;
+    GError *error = NULL;
     if (!g_shell_parse_argv (cmdline, &argc, &argv, &error)) {
         g_warning ("Can not parse cmdline `%s` exec: %s", cmdline, error->message);
         g_error_free (error);
@@ -102,7 +99,7 @@ execute_cmdline (const gchar *cmdline)
     }
 
     error = NULL;
-    retval = g_spawn_async (NULL, argv, NULL,
+    gboolean retval = g_spawn_async (NULL, argv, NULL,
                             G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
                             NULL, NULL,
                             NULL, &error);

@@ -170,7 +170,7 @@ static const gchar introspection_xml[] =
     "      <arg direction='out' type='s' name='address' />"
     "    </method>"
     "    <method name='CreateInputContext'>"
-    "      <arg direction='in'  type='s' name='app_name' />"
+    "      <arg direction='in'  type='s' name='client_name' />"
     "      <arg direction='out' type='o' name='object_path' />"
     "    </method>"
     "    <method name='CurrentInputContext'>"
@@ -1111,34 +1111,16 @@ _context_disabled_cb (BusInputContext    *context,
 }
 #endif
 
-static IBusMessage *
-_ibus_create_input_context (BusIBusImpl     *ibus,
-                            IBusMessage     *message,
-                            BusConnection   *connection)
+static void
+_ibus_create_input_context (BusIBusImpl           *ibus,
+                            GVariant              *parameters,
+                            GDBusMethodInvocation *invocation)
 {
-    g_assert (BUS_IS_IBUS_IMPL (ibus));
-    g_assert (message != NULL);
-    g_assert (BUS_IS_CONNECTION (connection));
+    const gchar *client_name = NULL;
+    g_variant_get (parameters, "(&s)", &client_name);
 
-    gint i;
-    gchar *client;
-    IBusError *error;
-    IBusMessage *reply;
-    BusInputContext *context;
-    const gchar *path;
-
-    if (!ibus_message_get_args (message,
-                                &error,
-                                G_TYPE_STRING, &client,
-                                G_TYPE_INVALID)) {
-        reply = ibus_message_new_error (message,
-                                        DBUS_ERROR_INVALID_ARGS,
-                                        "Argument 1 of CreateInputContext should be an string");
-        ibus_error_free (error);
-        return reply;
-    }
-
-    context = bus_input_context_new (connection, client);
+    BusConnection *connection = bus_connection_lookup (g_dbus_method_invocation_get_connection (invocation));
+    BusInputContext *context = bus_input_context_new (connection, client_name);
     g_object_ref_sink (context);
     ibus->contexts = g_list_append (ibus->contexts, context);
 
@@ -1157,6 +1139,7 @@ _ibus_create_input_context (BusIBusImpl     *ibus,
     #endif
     };
 
+    gint i;
     for (i = 0; i < G_N_ELEMENTS (signals); i++) {
         g_signal_connect (context,
                           signals[i].name,
@@ -1168,44 +1151,26 @@ _ibus_create_input_context (BusIBusImpl     *ibus,
         bus_input_context_enable (context);
     }
 
-    path = ibus_service_get_path ((IBusService *) context);
-    reply = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply,
-                              IBUS_TYPE_OBJECT_PATH, &path,
-                              G_TYPE_INVALID);
-
+    const gchar *path = ibus_service_get_object_path ((IBusService *) context);
     bus_dbus_impl_register_object (BUS_DEFAULT_DBUS,
                                    (IBusService *)context);
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(o)", path));
 }
 
-static IBusMessage *
-_ibus_current_input_context (BusIBusImpl     *ibus,
-                            IBusMessage     *message,
-                            BusConnection   *connection)
+static void
+_ibus_current_input_context (BusIBusImpl           *ibus,
+                             GVariant              *parameters,
+                             GDBusMethodInvocation *invocation)
 {
-    g_assert (BUS_IS_IBUS_IMPL (ibus));
-    g_assert (message != NULL);
-    g_assert (BUS_IS_CONNECTION (connection));
-
-    IBusMessage *reply;
-    const gchar *path;
-
     if (!ibus->focused_context)
     {
-        reply = ibus_message_new_error (message,
-                                        DBUS_ERROR_FAILED,
-                                        "No input context focused");
-        return reply;
+        g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "No focused input context");
     }
-
-    reply = ibus_message_new_method_return (message);
-    path = ibus_service_get_path((IBusService *)ibus->focused_context);
-    ibus_message_append_args (reply,
-                              IBUS_TYPE_OBJECT_PATH, &path,
-                              G_TYPE_INVALID);
-
-    return reply;
+    else {
+        const gchar *path = ibus_service_get_object_path ((IBusService *)ibus->focused_context);
+        g_dbus_method_invocation_return_value (invocation, g_variant_new ("(o)", path));
+    }
 }
 
 static void
@@ -1250,130 +1215,88 @@ bus_ibus_impl_add_factory (BusIBusImpl     *ibus,
 }
 
 
-static IBusMessage *
-_ibus_register_component (BusIBusImpl     *ibus,
-                          IBusMessage     *message,
-                          BusConnection   *connection)
+static void
+_ibus_register_component (BusIBusImpl           *ibus,
+                          GVariant              *parameters,
+                          GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-    IBusError *error;
-    gboolean retval;
-    GList *engines;
-    IBusComponent *component;
-    BusFactoryProxy *factory;
+    GVariant *variant = g_variant_get_child_value (parameters, 0);
+    IBusComponent *component = (IBusComponent *)ibus_serializable_deserialize (variant);
 
-    retval = ibus_message_get_args (message, &error,
-                                    IBUS_TYPE_COMPONENT, &component,
-                                    G_TYPE_INVALID);
-
-    if (!retval) {
-        reply = ibus_message_new_error_printf (message,
-                                               DBUS_ERROR_INVALID_ARGS,
-                                               "1st Argument must be IBusComponent: %s",
-                                               error->message);
-        ibus_error_free (error);
-        return reply;
+    if (!IBUS_IS_COMPONENT (component)) {
+        if (component) g_object_unref (component);
+        g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "The first argument should be an IBusComponent.");
+        return;
     }
 
     g_object_ref_sink (component);
-    factory = bus_factory_proxy_new (component, connection);
+    BusConnection *connection = bus_connection_lookup (g_dbus_method_invocation_get_connection (invocation));
+    BusFactoryProxy *factory = bus_factory_proxy_new (component, connection);
 
     if (factory == NULL) {
-        reply = ibus_message_new_error (message,
-                                        DBUS_ERROR_FAILED,
-                                        "Can not create factory");
-        return reply;
+        g_object_unref (component);
+        g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Create factory failed.");
+        return;
     }
 
     bus_ibus_impl_add_factory (ibus, factory);
 
-    engines = ibus_component_get_engines (component);
-
+    GList *engines = ibus_component_get_engines (component);
     g_list_foreach (engines, (GFunc) g_object_ref, NULL);
     ibus->register_engine_list = g_list_concat (ibus->register_engine_list, engines);
     g_object_unref (component);
-
-    reply = ibus_message_new_method_return (message);
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
-static IBusMessage *
-_ibus_list_engines (BusIBusImpl   *ibus,
-                    IBusMessage   *message,
-                    BusConnection *connection)
+static void
+_ibus_list_engines (BusIBusImpl           *ibus,
+                    GVariant              *parameters,
+                    GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-    IBusMessageIter iter, sub_iter;
-    GList *engines, *p;
+    GVariantBuilder builder;
+    g_variant_builder_init (&builder, G_VARIANT_TYPE ("av"));
 
-    reply = ibus_message_new_method_return (message);
-
-    ibus_message_iter_init_append (reply, &iter);
-    ibus_message_iter_open_container (&iter, IBUS_TYPE_ARRAY, "v", &sub_iter);
-
-    engines = bus_registry_get_engines (ibus->registry);
+    GList *engines = bus_registry_get_engines (ibus->registry);
+    GList *p;
     for (p = engines; p != NULL; p = p->next) {
-        ibus_message_iter_append (&sub_iter, IBUS_TYPE_ENGINE_DESC, &(p->data));
+        g_variant_builder_add (&builder, "v", ibus_serializable_serialize ((IBusSerializable *)p->data));
     }
     g_list_free (engines);
-    ibus_message_iter_close_container (&iter, &sub_iter);
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(av)", &builder));
 }
 
-static IBusMessage *
-_ibus_list_active_engines (BusIBusImpl   *ibus,
-                           IBusMessage   *message,
-                           BusConnection *connection)
+static void
+_ibus_list_active_engines (BusIBusImpl           *ibus,
+                           GVariant              *parameters,
+                           GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-    IBusMessageIter iter, sub_iter;
+    GVariantBuilder builder;
+    g_variant_builder_init (&builder, G_VARIANT_TYPE ("av"));
+
     GList *p;
-
-    reply = ibus_message_new_method_return (message);
-
-    ibus_message_iter_init_append (reply, &iter);
-    ibus_message_iter_open_container (&iter, IBUS_TYPE_ARRAY, "v", &sub_iter);
-
     for (p = ibus->engine_list; p != NULL; p = p->next) {
-        ibus_message_iter_append (&sub_iter, IBUS_TYPE_ENGINE_DESC, &(p->data));
+        g_variant_builder_add (&builder, "v", ibus_serializable_serialize ((IBusSerializable *)p->data));
     }
-
     for (p = ibus->register_engine_list; p != NULL; p = p->next) {
-        ibus_message_iter_append (&sub_iter, IBUS_TYPE_ENGINE_DESC, &(p->data));
+        g_variant_builder_add (&builder, "v", ibus_serializable_serialize ((IBusSerializable *)p->data));
     }
-    ibus_message_iter_close_container (&iter, &sub_iter);
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(av)", &builder));
 }
 
 
-static IBusMessage *
+static void
 _ibus_exit (BusIBusImpl     *ibus,
-            IBusMessage     *message,
-            BusConnection   *connection)
+            GVariant              *parameters,
+            GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-    IBusError *error;
-    gboolean restart;
+    gboolean restart = FALSE;
+    g_variant_get (parameters, "(b)", &restart);
 
-    if (!ibus_message_get_args (message,
-                                &error,
-                                G_TYPE_BOOLEAN, &restart,
-                                G_TYPE_INVALID)) {
-        reply = ibus_message_new_error (message,
-                                        DBUS_ERROR_INVALID_ARGS,
-                                        "Argument 1 of Exit should be an boolean");
-        ibus_error_free (error);
-        return reply;
-    }
+    g_dbus_method_invocation_return_value (invocation, NULL);
 
-    reply = ibus_message_new_method_return (message);
-    ibus_connection_send ((IBusConnection *) connection, reply);
-    ibus_connection_flush ((IBusConnection *) connection);
-    ibus_message_unref (reply);
-
-    ibus_object_destroy ((IBusObject *) BUS_DEFAULT_SERVER);
+    bus_server_quit ();
 
     if (!restart) {
         exit (0);
@@ -1410,26 +1333,14 @@ _ibus_exit (BusIBusImpl     *ibus,
 
     /* should not reach here */
     g_assert_not_reached ();
-
-    return NULL;
 }
 
-static IBusMessage *
-_ibus_ping (BusIBusImpl     *ibus,
-            IBusMessage     *message,
-            BusConnection   *connection)
+static void
+_ibus_ping (BusIBusImpl           *ibus,
+            GVariant              *parameters,
+            GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-    IBusMessageIter src, dst;
-
-    reply = ibus_message_new_method_return (message);
-
-    ibus_message_iter_init (message, &src);
-    ibus_message_iter_init_append (reply, &dst);
-
-    ibus_message_iter_copy_data (&dst, &src);
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, parameters);
 }
 
 static IBusMessage *

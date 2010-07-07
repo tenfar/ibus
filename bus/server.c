@@ -35,6 +35,8 @@ bus_new_connection_cb (GDBusServer     *server,
     g_object_unref (connection);
 }
 
+static GMainLoop *mainloop = NULL;
+
 void
 bus_server_start (void)
 {
@@ -63,10 +65,16 @@ bus_server_start (void)
     g_free (address);
 
     /* create main loop */
-    GMainLoop *mainloop = g_main_loop_new (NULL, FALSE);
+    mainloop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (mainloop);
 
     /* release resources */
     g_main_loop_unref (mainloop);
     g_object_unref (server);
+}
+
+void
+bus_server_quit (void)
+{
+    g_main_loop_quit (mainloop);
 }

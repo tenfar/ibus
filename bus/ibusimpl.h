@@ -74,7 +74,6 @@ IBusHotkeyProfile
                 *bus_ibus_impl_get_hotkey_profile   (BusIBusImpl        *ibus);
 IBusKeymap      *bus_ibus_impl_get_keymap           (BusIBusImpl        *ibus);
 BusRegistry     *bus_ibus_impl_get_registry         (BusIBusImpl        *ibus);
-
 gboolean         bus_ibus_impl_filter_keyboard_shortcuts
                                                     (BusIBusImpl        *ibus,
                                                      BusInputContext    *context,
@@ -82,6 +81,7 @@ gboolean         bus_ibus_impl_filter_keyboard_shortcuts
                                                      guint               modifiers,
                                                      guint               prev_keyval,
                                                      guint               prev_modifiers);
+gboolean         bus_ibus_impl_is_use_sys_layout    (BusIBusImpl        *ibus);
 
 G_END_DECLS
 #endif

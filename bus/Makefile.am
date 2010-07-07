@@ -86,6 +86,7 @@ ibus_daemon_SOURCES = \
 	registry.c \
 	registry.h \
 	option.h \
+	marshalers.c \
 	$(NULL)
 ibus_daemon_CFLAGS = \
 	$(AM_CFLAGS) \

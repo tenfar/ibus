@@ -1887,7 +1887,7 @@ bus_input_context_filter_keyboard_shortcuts (BusInputContext    *context,
         }
     }
 
-    if (keycode != 0 && !BUS_DEFAULT_IBUS->use_sys_layout) {
+    if (keycode != 0 && bus_ibus_impl_is_use_sys_layout (BUS_DEFAULT_IBUS)) {
         IBusKeymap *keymap = BUS_DEFAULT_KEYMAP;
         if (keymap != NULL) {
             guint tmp = ibus_keymap_lookup_keysym (keymap,

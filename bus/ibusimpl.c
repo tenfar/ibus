@@ -777,7 +777,7 @@ bus_ibus_impl_create_engine (IBusEngineDesc *engine_desc)
 
 static IBusEngineDesc *
 _find_engine_desc_by_name(BusIBusImpl *ibus,
-                          gchar *engine_name)
+                          const gchar *engine_name)
 {
     IBusEngineDesc *engine_desc = NULL;
     GList *p;
@@ -801,7 +801,7 @@ _find_engine_desc_by_name(BusIBusImpl *ibus,
 
 static void
 _context_request_engine_cb (BusInputContext *context,
-                            gchar           *engine_name,
+                            const gchar     *engine_name,
                             BusIBusImpl     *ibus)
 {
     IBusEngineDesc *engine_desc = NULL;
@@ -818,10 +818,10 @@ _context_request_engine_cb (BusInputContext *context,
                 return;
             }
             else {
-                engine_name = bus_ibus_impl_load_global_engine_name_from_config (ibus);
-                if (engine_name) {
-                    engine_desc = _find_engine_desc_by_name (ibus, engine_name);
-                    g_free (engine_name);
+                gchar *name = bus_ibus_impl_load_global_engine_name_from_config (ibus);
+                if (name) {
+                    engine_desc = _find_engine_desc_by_name (ibus, name);
+                    g_free (name);
                 }
             }
         }
@@ -1343,90 +1343,58 @@ _ibus_ping (BusIBusImpl           *ibus,
     g_dbus_method_invocation_return_value (invocation, parameters);
 }
 
-static IBusMessage *
-_ibus_get_use_sys_layout (BusIBusImpl     *ibus,
-                          IBusMessage     *message,
-                          BusConnection   *connection)
+static void
+_ibus_get_use_sys_layout (BusIBusImpl           *ibus,
+                          GVariant              *parameters,
+                          GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-
-    reply = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply,
-            G_TYPE_BOOLEAN, &ibus->use_sys_layout,
-            G_TYPE_INVALID);
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation,
+                    g_variant_new ("(b)", ibus->use_sys_layout));
 }
 
-static IBusMessage *
-_ibus_get_use_global_engine (BusIBusImpl     *ibus,
-                             IBusMessage     *message,
-                             BusConnection   *connection)
+static void
+_ibus_get_use_global_engine (BusIBusImpl           *ibus,
+                             GVariant              *parameters,
+                             GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-
-    reply = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply,
-            G_TYPE_BOOLEAN, &ibus->use_global_engine,
-            G_TYPE_INVALID);
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation,
+                    g_variant_new ("(b)", ibus->use_global_engine));
 }
 
-static IBusMessage *
-_ibus_get_global_engine (BusIBusImpl     *ibus,
-                         IBusMessage     *message,
-                         BusConnection   *connection)
+static void
+_ibus_get_global_engine (BusIBusImpl           *ibus,
+                         GVariant              *parameters,
+                         GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
-
     if (ibus->use_global_engine && ibus->global_engine) {
         IBusEngineDesc *desc = bus_engine_proxy_get_desc (ibus->global_engine);
         if (desc != NULL) {
-            reply = ibus_message_new_method_return (message);
-            ibus_message_append_args (reply,
-                                      IBUS_TYPE_ENGINE_DESC, &desc,
-                                      G_TYPE_INVALID);
-            return reply;
+            GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)desc);
+            g_dbus_method_invocation_return_value (invocation,
+                            g_variant_new ("(v)", variant));
+            return;
         }
     }
-
-    reply = ibus_message_new_error (message, DBUS_ERROR_FAILED,
-                                    "No global engine.");
-    return reply;
+    g_dbus_method_invocation_return_error (invocation,
+                    G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                    "No global engine.");
 }
 
-static IBusMessage *
-_ibus_set_global_engine (BusIBusImpl     *ibus,
-                         IBusMessage     *message,
-                         BusConnection   *connection)
+static void
+_ibus_set_global_engine (BusIBusImpl           *ibus,
+                         GVariant              *parameters,
+                         GDBusMethodInvocation *invocation)
 {
-    gboolean retval;
-    IBusMessage *reply;
-    IBusError *error;
-    gchar *new_engine_name;
-    gchar *old_engine_name;
-
     if (!ibus->use_global_engine) {
-        reply = ibus_message_new_error (message, DBUS_ERROR_FAILED,
-                                        "Global engine feature is disable.");
-        return reply;
+        g_dbus_method_invocation_return_error (invocation,
+                        G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                        "Global engine feature is disabled.");
+        return;
     }
 
-    retval = ibus_message_get_args (message,
-                                    &error,
-                                    G_TYPE_STRING, &new_engine_name,
-                                    G_TYPE_INVALID);
-    if (!retval) {
-        reply = ibus_message_new_error (message,
-                                        error->name,
-                                        error->message);
-        ibus_error_free (error);
-        return reply;
-    }
-
-    reply = ibus_message_new_method_return (message);
-    old_engine_name = NULL;
+    const gchar *new_engine_name = NULL;
+    g_variant_get (parameters, "(&s)", &new_engine_name);
+    const gchar *old_engine_name = NULL;
 
     if (ibus->global_engine) {
         old_engine_name = bus_engine_proxy_get_desc (ibus->global_engine)->name;
@@ -1441,7 +1409,8 @@ _ibus_set_global_engine (BusIBusImpl     *ibus,
         else if (ibus->global_engine) {
             bus_engine_proxy_enable (ibus->global_engine);
         }
-        return reply;
+        g_dbus_method_invocation_return_value (invocation, NULL);
+        return;
     }
 
     /* If there is a focused input context, then we just change the engine of
@@ -1471,24 +1440,18 @@ _ibus_set_global_engine (BusIBusImpl     *ibus,
             }
         }
     }
-
-    return reply;
+    g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
-static IBusMessage *
-_ibus_is_global_engine_enabled (BusIBusImpl     *ibus,
-                                IBusMessage     *message,
-                                BusConnection   *connection)
+static void
+_ibus_is_global_engine_enabled (BusIBusImpl           *ibus,
+                                GVariant              *parameters,
+                                GDBusMethodInvocation *invocation)
 {
-    IBusMessage *reply;
     gboolean enabled = (ibus->use_global_engine && ibus->global_engine &&
                         bus_engine_proxy_is_enabled (ibus->global_engine));
-
-    reply = ibus_message_new_method_return (message);
-    ibus_message_append_args (reply,
-                              G_TYPE_BOOLEAN, &enabled,
-                              G_TYPE_INVALID);
-    return reply;
+    g_dbus_method_invocation_return_value (invocation,
+                    g_variant_new ("(b)", enabled));
 }
 
 static void
@@ -1501,20 +1464,16 @@ bus_ibus_impl_service_method_call (IBusService           *service,
                                    GVariant              *parameters,
                                    GDBusMethodInvocation *invocation)
 {
-    g_assert (BUS_IS_IBUS_IMPL (ibus));
-    g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (message != NULL);
-
     if (g_strcmp0 (interface_name, "org.freedesktop.IBus") != 0) {
         IBUS_SERVICE_CLASS(bus_ibus_impl_parent_class)->service_method_call (
                         service, connection, sender, object_path, interface_name, method_name,
-                        parameters, incocation);
+                        parameters, invocation);
         return;
     }
 
     static const struct {
         const gchar *method_name;
-        void (* method_call) (BusIBusImpl *, GVariant *, GDBusMethodInocation *);
+        void (* method_callback) (BusIBusImpl *, GVariant *, GDBusMethodInvocation *);
     } methods [] =  {
         /* IBus interface */
         { "GetAddress",            _ibus_get_address },
@@ -1535,7 +1494,7 @@ bus_ibus_impl_service_method_call (IBusService           *service,
     gint i;
     for (i = 0; i < G_N_ELEMENTS (methods); i++) {
         if (g_strcmp0 (methods[i].method_name, method_name) == 0) {
-            methods[i].method_callback (ibus, parameter, invocation);
+            methods[i].method_callback ((BusIBusImpl *)service, parameters, invocation);
             return;
         }
     }
@@ -1599,40 +1558,23 @@ bus_ibus_impl_get_registry (BusIBusImpl *ibus)
 static void
 bus_ibus_impl_registry_changed (BusIBusImpl *ibus)
 {
-    g_assert (BUS_IS_IBUS_IMPL (ibus));
-
-    IBusMessage *message;
-
-    message = ibus_message_new_signal (IBUS_PATH_IBUS,
-                                       IBUS_INTERFACE_IBUS,
-                                       "RegistryChanged");
-    ibus_message_append_args (message,
-                              G_TYPE_INVALID);
-    ibus_message_set_sender (message, IBUS_SERVICE_IBUS);
-
-    bus_dbus_impl_dispatch_message_by_rule (BUS_DEFAULT_DBUS, message, NULL);
-
-    ibus_message_unref (message);
-
+    ibus_service_emit_signal ((IBusService *) ibus,
+                              NULL,
+                              "org.freedesktop.IBus",
+                              "RegistryChanged",
+                              NULL,
+                              NULL);
 }
 
 static void
 bus_ibus_impl_global_engine_changed (BusIBusImpl *ibus)
 {
-    g_assert (BUS_IS_IBUS_IMPL (ibus));
-
-    IBusMessage *message;
-
-    message = ibus_message_new_signal (IBUS_PATH_IBUS,
-                                       IBUS_INTERFACE_IBUS,
-                                       "GlobalEngineChanged");
-    ibus_message_append_args (message,
-                              G_TYPE_INVALID);
-    ibus_message_set_sender (message, IBUS_SERVICE_IBUS);
-
-    bus_dbus_impl_dispatch_message_by_rule (BUS_DEFAULT_DBUS, message, NULL);
-
-    ibus_message_unref (message);
+    ibus_service_emit_signal ((IBusService *) ibus,
+                              NULL,
+                              "org.freedesktop.IBus",
+                              "GlobalEngineChanged",
+                              NULL,
+                              NULL);
 }
 
 gboolean
@@ -1694,18 +1636,15 @@ bus_ibus_impl_filter_keyboard_shortcuts (BusIBusImpl     *ibus,
 static gchar*
 bus_ibus_impl_load_global_engine_name_from_config (BusIBusImpl *ibus)
 {
-    GValue value = { 0 };
-    gchar *global_engine_name = NULL;
-
     g_assert (IBUS_IS_CONFIG (ibus->config));
 
-    if (ibus_config_get_value (ibus->config, "general", "global_engine", &value) &&
-        G_VALUE_TYPE (&value) == G_TYPE_STRING) {
-        global_engine_name = g_value_dup_string (&value);
-        g_value_unset (&value);
+    GVariant *variant = ibus_config_get_value (ibus->config, "general", "global_engine");
+    gchar *engine_name = NULL;
+    if (variant != NULL) {
+        g_variant_get (variant, "s", &engine_name);
+        g_variant_unref (variant);
     }
-
-    return global_engine_name;
+    return engine_name;
 }
 
 static void
@@ -1714,30 +1653,24 @@ bus_ibus_impl_save_global_engine_name_to_config (BusIBusImpl *ibus)
     g_assert (IBUS_IS_CONFIG (ibus->config));
 
     if (ibus->use_global_engine && ibus->global_engine) {
-        GValue value = { 0 };
-        g_value_init (&value, G_TYPE_STRING);
-        g_value_set_static_string (&value, bus_engine_proxy_get_desc (ibus->global_engine)->name);
-
-        ibus_config_set_value (ibus->config, "general", "global_engine", &value);
-        g_value_unset (&value);
+        ibus_config_set_value (ibus->config,
+                        "general", "global_engine",
+                        g_variant_new ("s", bus_engine_proxy_get_desc (ibus->global_engine)->name));
     }
 }
 
 static gchar*
 bus_ibus_impl_load_global_previous_engine_name_from_config (BusIBusImpl *ibus)
 {
-    GValue value = { 0 };
-    gchar *global_previous_engine_name = NULL;
-
     g_assert (IBUS_IS_CONFIG (ibus->config));
 
-    if (ibus_config_get_value (ibus->config, "general", "global_previous_engine", &value) &&
-        G_VALUE_TYPE (&value) == G_TYPE_STRING) {
-        global_previous_engine_name = g_value_dup_string (&value);
-        g_value_unset (&value);
-    }
-
-    return global_previous_engine_name;
+    GVariant *value = ibus_config_get_value (ibus->config, "general", "global_previous_engine");
+    if (value == NULL)
+        return NULL;
+    gchar *engine_name = NULL;
+    g_variant_get (value, "(s)", &engine_name);
+    g_variant_unref (value);
+    return engine_name;
 }
 
 static void
@@ -1746,11 +1679,16 @@ bus_ibus_impl_save_global_previous_engine_name_to_config (BusIBusImpl *ibus)
     g_assert (IBUS_IS_CONFIG (ibus->config));
 
     if (ibus->use_global_engine && ibus->global_previous_engine_name) {
-        GValue value = { 0 };
-        g_value_init (&value, G_TYPE_STRING);
-        g_value_set_static_string (&value, ibus->global_previous_engine_name);
-
-        ibus_config_set_value (ibus->config, "general", "global_previous_engine", &value);
-        g_value_unset (&value);
+        ibus_config_set_value (ibus->config,
+                        "general", "global_previous_engine",
+                        g_variant_new ("s", ibus->global_previous_engine_name));
     }
+}
+
+gboolean
+bus_ibus_impl_is_use_sys_layout (BusIBusImpl *ibus)
+{
+    g_assert (BUS_IS_IBUS_IMPL(ibus));
+
+    return ibus->use_sys_layout;
 }

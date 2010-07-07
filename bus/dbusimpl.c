@@ -746,9 +746,10 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
             return FALSE;
-        case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
         case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
         case G_DBUS_MESSAGE_TYPE_ERROR:
+            return FALSE;
+        case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
         default:
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);

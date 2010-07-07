@@ -38,16 +38,14 @@ struct _BusFactoryProxyClass {
 };
 
 /* functions prototype */
-static void      bus_factory_proxy_destroy      (BusFactoryProxy        *factory);
+static void      bus_factory_proxy_destroy      (IBusProxy        *proxy);
 
 G_DEFINE_TYPE (BusFactoryProxy, bus_factory_proxy, IBUS_TYPE_PROXY)
 
 static void
-bus_factory_proxy_class_init (BusFactoryProxyClass *klass)
+bus_factory_proxy_class_init (BusFactoryProxyClass *class)
 {
-    IBusObjectClass *ibus_object_class = IBUS_OBJECT_CLASS (klass);
-
-    ibus_object_class->destroy = (IBusObjectDestroyFunc) bus_factory_proxy_destroy;
+    IBUS_PROXY_CLASS(class)->destroy = bus_factory_proxy_destroy;
 }
 
 static void
@@ -57,8 +55,9 @@ bus_factory_proxy_init (BusFactoryProxy *factory)
 }
 
 static void
-bus_factory_proxy_destroy (BusFactoryProxy *factory)
+bus_factory_proxy_destroy (IBusProxy *proxy)
 {
+    BusFactoryProxy *factory = (BusFactoryProxy *)proxy;
     GList *p;
 
     for (p = factory->engine_list; p != NULL ; p = p->next) {
@@ -75,7 +74,7 @@ bus_factory_proxy_destroy (BusFactoryProxy *factory)
         factory->component = NULL;
     }
 
-    IBUS_OBJECT_CLASS(bus_factory_proxy_parent_class)->destroy (IBUS_OBJECT (factory));
+    IBUS_PROXY_CLASS(bus_factory_proxy_parent_class)->destroy (IBUS_PROXY (factory));
 }
 
 BusFactoryProxy *
@@ -96,9 +95,9 @@ bus_factory_proxy_new (IBusComponent *component,
     }
 
     factory = g_object_new (BUS_TYPE_FACTORY_PROXY,
-                            "name", NULL,
-                            "object-path", "/org/freedesktop/IBus/Factory",
-                            "connection", bus_connection_get_dbus_connection (connection),
+                            "g-object-path", "/org/freedesktop/IBus/Factory",
+                            "g-interface-name", "org.freedesktop.IBus.Factory",
+                            "g-connection", bus_connection_get_dbus_connection (connection),
                             NULL);
 
     g_object_ref_sink (component);

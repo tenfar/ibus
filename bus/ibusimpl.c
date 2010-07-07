@@ -80,7 +80,9 @@ enum {
     PROP_0,
 };
 
+/*
 static guint            _signals[LAST_SIGNAL] = { 0 };
+*/
 
 /* functions prototype */
 static void      bus_ibus_impl_destroy           (BusIBusImpl        *ibus);
@@ -572,9 +574,9 @@ _dbus_name_owner_changed_cb (BusDBusImpl *dbus,
             g_return_if_fail (connection != NULL);
 
             ibus->config = g_object_new (IBUS_TYPE_CONFIG,
-                                         "name", NULL,
-                                         "path", IBUS_PATH_CONFIG,
-                                         "connection", connection,
+                                         "g-object-path", "/org/freedesktop/IBus/Config",
+                                         "g-interface-name", "org.freedesktop.IBus.Config",
+                                         "g-connection", bus_connection_get_dbus_connection (connection),
                                          NULL);
             g_object_ref_sink (ibus->config);
 

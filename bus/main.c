@@ -31,11 +31,8 @@
 #include <gio/gio.h>
 #include <ibus.h>
 #include "server.h"
-
-/* FIXME */
-/*
 #include "ibusimpl.h"
-*/
+
 gchar **g_argv = NULL;
 
 static gboolean daemonize = FALSE;
@@ -85,8 +82,6 @@ static const GOptionEntry entries[] =
     { NULL },
 };
 
-/* FIXME */
-#if 0
 static gboolean
 execute_cmdline (const gchar *cmdline)
 {
@@ -116,7 +111,6 @@ execute_cmdline (const gchar *cmdline)
 
     return TRUE;
 }
-#endif
 
 #ifndef HAVE_DAEMON
 static void
@@ -251,8 +245,7 @@ main (gint argc, gchar **argv)
         bus = NULL;
     }
 #endif
-    bus_server_start ();
-#if 0
+    bus_server_init ();
     /* FIXME */
     if (!single) {
         /* execute config component */
@@ -294,7 +287,6 @@ main (gint argc, gchar **argv)
             exit (-1);
     }
 
-    bus_server_run (server);
-#endif
+    bus_server_run ();
     return 0;
 }

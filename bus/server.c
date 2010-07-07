@@ -24,6 +24,7 @@
 #include "ibusimpl.h"
 #include "option.h"
 
+static GDBusServer *server = NULL;
 static GMainLoop *mainloop = NULL;
 static BusDBusImpl *dbus = NULL;
 static BusIBusImpl *ibus = NULL;
@@ -33,12 +34,9 @@ bus_new_connection_cb (GDBusServer     *server,
                        GDBusConnection *dbus_connection,
                        gpointer         user_data)
 {
-    g_debug ("new connection");
     BusConnection *connection = bus_connection_new (dbus_connection);
-
     bus_dbus_impl_new_connection (dbus, connection);
 
-    /* FIXME */
     if (g_object_is_floating (connection)) {
         ibus_object_destroy ((IBusObject *)connection);
         g_object_unref (connection);
@@ -46,9 +44,8 @@ bus_new_connection_cb (GDBusServer     *server,
 }
 
 void
-bus_server_start (void)
+bus_server_init (void)
 {
-    g_debug ("main thead = %p", g_thread_self ());
     dbus = bus_dbus_impl_get_default ();
     ibus = bus_ibus_impl_get_default ();
     bus_dbus_impl_register_object (dbus, (IBusService *)ibus);
@@ -56,8 +53,8 @@ bus_server_start (void)
     /* init server */
     GDBusServerFlags flags = G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS;
     gchar *guid = g_dbus_generate_guid ();
-    GDBusServer *server =  g_dbus_server_new_sync (g_address,
-				        flags, guid, NULL, NULL, NULL);
+    server =  g_dbus_server_new_sync (g_address,
+                    flags, guid, NULL, NULL, NULL);
     g_free (guid);
 
     g_signal_connect (server, "new-connection", G_CALLBACK (bus_new_connection_cb), NULL);
@@ -77,7 +74,11 @@ bus_server_start (void)
 #endif
 
     g_free (address);
+}
 
+void
+bus_server_run (void)
+{
     /* create main loop */
     mainloop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (mainloop);

@@ -206,6 +206,7 @@ ibus_config_service_service_method_call (IBusService           *service,
                                      invocation);
         return;
     }
+    g_debug ("sender = %s", sender);
 
     if (g_strcmp0 (method_name, "SetValue") == 0) {
         gchar *section;

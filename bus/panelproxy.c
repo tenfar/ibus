@@ -92,9 +92,9 @@ bus_panel_proxy_new (BusConnection *connection)
 
     GObject *obj;
     obj = g_object_new (BUS_TYPE_PANEL_PROXY,
-                        "name", NULL,
-                        "path", IBUS_PATH_PANEL,
-                        "connection", connection,
+                        "g-object-path", IBUS_PATH_PANEL,
+                        "g-interface-name", "org.freedesktop.IBus.Panel",
+                        "g-connection", bus_connection_get_dbus_connection (connection),
                         NULL);
 
     return BUS_PANEL_PROXY (obj);

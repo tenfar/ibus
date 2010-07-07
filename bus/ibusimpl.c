@@ -254,6 +254,7 @@ bus_ibus_impl_set_hotkey (BusIBusImpl *ibus,
         return;
     }
 
+    g_debug ("value=%s", g_variant_print (value, TRUE));
     GVariantIter iter;
     g_variant_iter_init (&iter, value);
     const gchar *str = NULL;
@@ -539,7 +540,7 @@ _dbus_name_owner_changed_cb (BusDBusImpl *dbus,
             BusConnection *connection;
 
             if (ibus->panel != NULL) {
-                ibus_object_destroy (IBUS_OBJECT (ibus->panel));
+                ibus_proxy_destroy ((IBusProxy *)ibus->panel);
                 /* panel should be NULL after destroy */
                 g_assert (ibus->panel == NULL);
             }
@@ -565,7 +566,7 @@ _dbus_name_owner_changed_cb (BusDBusImpl *dbus,
             BusConnection *connection;
 
             if (ibus->config != NULL) {
-                ibus_object_destroy (IBUS_OBJECT (ibus->config));
+                ibus_proxy_destroy ((IBusProxy *)ibus->config);
                 /* config should be NULL */
                 g_assert (ibus->config == NULL);
             }
@@ -946,12 +947,12 @@ bus_ibus_impl_set_global_engine (BusIBusImpl    *ibus,
         /* Save the current global engine's name as previous engine. */
         ibus->global_previous_engine_name = g_strdup (bus_engine_proxy_get_desc (ibus->global_engine)->name);
 
-        ibus_object_destroy ((IBusObject *)ibus->global_engine);
+        ibus_proxy_destroy ((IBusProxy *)ibus->global_engine);
         /* global_engine should be NULL */
         g_assert (ibus->global_engine == NULL);
     }
 
-    if (engine != NULL && !IBUS_OBJECT_DESTROYED (engine)) {
+    if (engine != NULL && !IBUS_PROXY_DESTROYED (engine)) {
         g_object_ref (engine);
         ibus->global_engine = engine;
         g_signal_connect (ibus->global_engine, "destroy",

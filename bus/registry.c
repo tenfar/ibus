@@ -543,7 +543,7 @@ bus_registry_name_owner_changed (BusRegistry *registry,
         factory = bus_factory_proxy_get_from_component (component);
 
         if (factory != NULL) {
-            ibus_object_destroy ((IBusObject *)factory);
+            ibus_proxy_destroy ((IBusProxy *)factory);
         }
     }
 

@@ -1679,7 +1679,8 @@ bus_input_context_new (BusConnection    *connection,
     path = g_strdup_printf (IBUS_PATH_INPUT_CONTEXT, ++id);
 
     context = (BusInputContext *) g_object_new (BUS_TYPE_INPUT_CONTEXT,
-                                                "path", path,
+                                                "object-path", path,
+                                                "connection",  bus_connection_get_dbus_connection (connection),
                                                 NULL);
     g_free (path);
 

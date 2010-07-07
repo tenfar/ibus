@@ -40,6 +40,7 @@ struct _IBusServicePrivate {
     gchar *object_path;
     GDBusConnection *connection;
     GHashTable *table;
+    gboolean constructed;
 };
 
 /*
@@ -272,6 +273,7 @@ ibus_service_constructed (GObject *object)
             g_error_free (error);
         }
     }
+    service->priv->constructed = TRUE;
 }
 
 static void
@@ -500,8 +502,7 @@ ibus_service_register (IBusService     *service,
 {
     g_return_val_if_fail (IBUS_IS_SERVICE (service), FALSE);
     g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
-    g_return_val_if_fail ((connection == service->priv->connection || service->priv->connection == NULL),
-                          FALSE);
+    g_return_val_if_fail (connection != service->priv->connection || service->priv->constructed == FALSE, FALSE);
     g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
     GArray *array = NULL;

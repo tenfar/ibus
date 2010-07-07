@@ -27,6 +27,7 @@
 #include <locale.h>
 #include <string.h>
 #include <strings.h>
+#include <ibusinternal.h>
 #include "ibusimpl.h"
 #include "dbusimpl.h"
 #include "server.h"
@@ -40,7 +41,6 @@
 struct _BusIBusImpl {
     IBusService parent;
     /* instance members */
-
     GHashTable *factory_dict;
     GList *factory_list;
     GList *contexts;
@@ -80,7 +80,7 @@ enum {
     PROP_0,
 };
 
-// static guint            _signals[LAST_SIGNAL] = { 0 };
+static guint            _signals[LAST_SIGNAL] = { 0 };
 
 /* functions prototype */
 static void      bus_ibus_impl_destroy           (BusIBusImpl        *ibus);
@@ -1508,10 +1508,8 @@ bus_ibus_impl_get_default (void)
 
     if (ibus == NULL) {
         ibus = (BusIBusImpl *) g_object_new (BUS_TYPE_IBUS_IMPL,
-                                             "path", IBUS_PATH_IBUS,
+                                             "object-path", IBUS_PATH_IBUS,
                                              NULL);
-        bus_dbus_impl_register_object (BUS_DEFAULT_DBUS,
-                                       (IBusService *)ibus);
     }
     return ibus;
 }

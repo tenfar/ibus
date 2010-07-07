@@ -45,6 +45,7 @@ struct _BusDBusImpl {
     GList *rules;
     gint id;
 
+    GMutex *dispatch_lock;
     GList *dispatch_queue;
 };
 
@@ -225,6 +226,8 @@ bus_dbus_impl_init (BusDBusImpl *dbus)
 {
     dbus->unique_names = g_hash_table_new (g_str_hash, g_str_equal);
     dbus->names = g_hash_table_new (g_str_hash, g_str_equal);
+
+    dbus->dispatch_lock = g_mutex_new ();
 }
 
 static void
@@ -617,7 +620,7 @@ bus_dbus_impl_service_method_call (IBusService           *service,
     };
 
     gint i;
-    for (i = 0; G_N_ELEMENTS (methods); i++) {
+    for (i = 0; i < G_N_ELEMENTS (methods); i++) {
         if (g_strcmp0 (method_name, methods[i].method_name) == 0) {
             BusConnection *connection = bus_connection_lookup (dbus_connection);
             g_assert (BUS_IS_CONNECTION (connection));
@@ -671,6 +674,18 @@ bus_dbus_impl_service_set_property (IBusService        *service,
                                       error);
 
 }
+
+#if 0
+static void
+message_print(GDBusMessage *message)
+{
+        g_debug ("%d %s.%s",
+                g_dbus_message_get_message_type (message),
+                g_dbus_message_get_interface (message),
+                g_dbus_message_get_member (message)
+                );
+}
+#endif
 
 static gboolean
 bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
@@ -813,6 +828,13 @@ bus_dbus_impl_new_connection (BusDBusImpl   *dbus,
                       "destroy",
                       G_CALLBACK (bus_dbus_impl_connection_destroy_cb),
                       dbus);
+    ibus_service_register ((IBusService *)dbus,
+                    bus_connection_get_dbus_connection (connection), NULL);
+    GList *p;
+    for (p = dbus->objects; p != NULL; p = p->next) {
+        ibus_service_register ((IBusService *)p->data,
+                        bus_connection_get_dbus_connection (connection), NULL);
+    }
     return TRUE;
 }
 
@@ -901,22 +923,26 @@ bus_dispatch_data_free (BusDispatchData *data)
 }
 
 static gboolean
-bus_dbus_impl_dispatch_message_by_rule_cb (BusDBusImpl     *dbus)
+bus_dbus_impl_dispatch_message_by_rule_cb (BusDBusImpl *dbus)
 {
-
-    g_assert (dbus->dispatch_queue != NULL);
+    g_return_val_if_fail (dbus->dispatch_queue != NULL, FALSE);
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus))) {
         /* dbus was destryed */
+        g_mutex_lock (dbus->dispatch_lock);
         g_list_foreach (dbus->dispatch_queue, (GFunc)bus_dispatch_data_free, NULL);
         g_list_free (dbus->dispatch_queue);
         dbus->dispatch_queue = NULL;
+        g_mutex_unlock (dbus->dispatch_lock);
         return FALSE;
     }
 
     /* remove fist node */
+    g_mutex_lock (dbus->dispatch_lock);
     BusDispatchData *data = (BusDispatchData *)dbus->dispatch_queue->data;
-    dbus->dispatch_queue = g_list_remove_link (dbus->dispatch_queue, dbus->dispatch_queue);
+    dbus->dispatch_queue = g_list_delete_link (dbus->dispatch_queue, dbus->dispatch_queue);
+    gboolean has_message = (dbus->dispatch_queue != NULL);
+    g_mutex_unlock (dbus->dispatch_lock);
 
     GList *link = NULL;
     GList *recipients = NULL;
@@ -939,7 +965,7 @@ bus_dbus_impl_dispatch_message_by_rule_cb (BusDBusImpl     *dbus)
     g_list_free (recipients);
     bus_dispatch_data_free (data);
 
-    return (dbus->dispatch_queue != NULL);
+    return has_message;
 }
 
 void
@@ -966,9 +992,11 @@ bus_dbus_impl_dispatch_message_by_rule (BusDBusImpl     *dbus,
     g_object_set_qdata ((GObject *)message, dispatched_quark, GINT_TO_POINTER (1));
 
     /* append dispatch data into the queue, and start idle task if necessary */
+    g_mutex_lock (dbus->dispatch_lock);
     gboolean running = (dbus->dispatch_queue != NULL);
     dbus->dispatch_queue = g_list_append (dbus->dispatch_queue,
                     bus_dispatch_data_new (message, skip_connection));
+    g_mutex_unlock (dbus->dispatch_lock);
     if (!running) {
         g_idle_add_full (0,
                          (GSourceFunc)bus_dbus_impl_dispatch_message_by_rule_cb,
@@ -1000,6 +1028,13 @@ bus_dbus_impl_register_object (BusDBusImpl *dbus,
     g_signal_connect (object, "destroy",
                     G_CALLBACK (bus_dbus_impl_object_destroy_cb), dbus);
 
+    GList *p;
+    for (p = dbus->connections; p != NULL; p = p->next) {
+        GDBusConnection *connection = bus_connection_get_dbus_connection ((BusConnection *)p->data);
+        if (connection != ibus_service_get_connection ((IBusService *)object))
+            ibus_service_register ((IBusService *)object,
+                            bus_connection_get_dbus_connection ((BusConnection *)p->data), NULL);
+    }
     return TRUE;
 }
 
@@ -1017,6 +1052,13 @@ bus_dbus_impl_unregister_object (BusDBusImpl *dbus,
     g_signal_handlers_disconnect_by_func (object,
                     G_CALLBACK (bus_dbus_impl_object_destroy_cb), dbus);
     dbus->objects = g_list_delete_link (dbus->objects, p);
+    if (!IBUS_OBJECT_DESTROYED (object)) {
+        GList *p;
+        for (p = dbus->connections; p != NULL; p = p->next) {
+            ibus_service_unregister ((IBusService *)object,
+                            bus_connection_get_dbus_connection ((BusConnection *)p->data));
+        }
+    }
     g_object_unref (object);
 
     return TRUE;

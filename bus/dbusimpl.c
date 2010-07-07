@@ -679,15 +679,46 @@ bus_dbus_impl_service_set_property (IBusService        *service,
 
 }
 
-#if 0
+#if 1
 static void
 message_print(GDBusMessage *message)
 {
-        g_debug ("%d %s.%s",
-                g_dbus_message_get_message_type (message),
-                g_dbus_message_get_interface (message),
-                g_dbus_message_get_member (message)
-                );
+    switch (g_dbus_message_get_message_type (message)) {
+    case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+        g_debug ("From %s to %s, CALL(%u) %s.%s",
+            g_dbus_message_get_sender (message),
+            g_dbus_message_get_destination (message),
+            g_dbus_message_get_serial (message),
+            g_dbus_message_get_interface (message),
+            g_dbus_message_get_member (message)
+            );
+        break;
+    case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+        g_debug ("From %s to %s, RETURN(%u)",
+            g_dbus_message_get_sender (message),
+            g_dbus_message_get_destination (message),
+            g_dbus_message_get_reply_serial (message)
+            );
+        break;
+    case G_DBUS_MESSAGE_TYPE_ERROR:
+        g_debug ("From %s to %s, ERROR(%u) %s",
+            g_dbus_message_get_sender (message),
+            g_dbus_message_get_destination (message),
+            g_dbus_message_get_reply_serial (message),
+            g_dbus_message_get_error_name (message)
+            );
+        break;
+    case G_DBUS_MESSAGE_TYPE_SIGNAL:
+        g_debug ("From %s to %s, SIGNAL %s",
+            g_dbus_message_get_sender (message),
+            g_dbus_message_get_destination (message),
+            g_dbus_message_get_member (message)
+            );
+        break;
+    default:
+        break;
+    }
+
 }
 #endif
 
@@ -700,15 +731,22 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
     BusDBusImpl *dbus = (BusDBusImpl *) user_data;
     BusConnection *connection = bus_connection_lookup (dbus_connection);
 
-    if (!incoming) {
-        /* outgoing messages */
+    if (incoming) {
+        g_dbus_message_set_sender (message, bus_connection_get_unique_name (connection));
+    }
+    else {
         if (g_dbus_message_get_sender (message) == NULL) {
             g_dbus_message_set_sender (message, "org.freedesktop.DBus");
         }
+    }
+
+    if (!incoming) {
+        /* outgoing messages */
         /* dispatch the outgoing message by rule */
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
         return FALSE;
     }
+    message_print (message);
 
     /* incoming messages */
     const gchar *destination = g_dbus_message_get_destination (message);
@@ -874,7 +912,6 @@ bus_dbus_impl_forward_message_idle_cb (BusDBusImpl   *dbus)
     BusConnection *dest_connection = destination != NULL ?
             bus_dbus_impl_get_connection_by_name (dbus, destination): NULL;
     if (dest_connection != NULL) {
-        g_debug ("got dest");
         GError *error = NULL;
         gboolean retval = g_dbus_connection_send_message (bus_connection_get_dbus_connection (dest_connection),
                                         message, NULL, &error);
@@ -917,8 +954,6 @@ bus_dbus_impl_forward_message (BusDBusImpl   *dbus,
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus)))
         return;
-
-    g_dbus_message_set_sender (message, bus_connection_get_unique_name (connection));
 
     g_mutex_lock (dbus->forward_lock);
     gboolean is_running = (dbus->forward_queue != NULL);

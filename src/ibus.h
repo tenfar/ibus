@@ -21,6 +21,8 @@
 #ifndef __IBUS_H_
 #define __IBUS_H_
 
+#define __IBUS_H_INSIDE__
+
 #include <ibusversion.h>
 #include <ibusshare.h>
 #include <ibusobject.h>
@@ -46,6 +48,8 @@
 #include <ibuscomponent.h>
 #include <ibusconfig.h>
 #include <ibusconfigservice.h>
+
+#undef __IBUS_H_INSIDE__
 
 #endif
 

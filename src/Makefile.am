@@ -43,6 +43,7 @@ AM_CPPFLAGS =                           \
 	@GOBJECT2_CFLAGS@                   \
 	@GIO2_CFLAGS@                       \
 	-DIBUS_DATA_DIR=\"$(pkgdatadir)\"   \
+	-DIBUS_COMPILATION					\
 	$(NULL)
 
 # ibus library

@@ -76,16 +76,16 @@ AC_CHECK_FUNCS(daemon)
 # check glib2
 AM_PATH_GLIB_2_0
 PKG_CHECK_MODULES(GLIB2, [
-    glib-2.0 >= 2.18
+    glib-2.0 >= 2.25
 ])
 PKG_CHECK_MODULES(GOBJECT2, [
-    gobject-2.0 >= 2.18
+    gobject-2.0 >= 2.25
 ])
 PKG_CHECK_MODULES(GIO2, [
-    gio-2.0 >= 2.18
+    gio-2.0 >= 2.25
 ])
 PKG_CHECK_MODULES(GTHREAD2, [
-    gthread-2.0 >= 2.18
+    gthread-2.0 >= 2.25
 ])
 
 AC_ARG_ENABLE(gtk2,

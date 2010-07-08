@@ -679,7 +679,7 @@ bus_dbus_impl_service_set_property (IBusService        *service,
 
 }
 
-#if 1
+#if 0
 static void
 message_print(GDBusMessage *message)
 {
@@ -751,7 +751,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
         return FALSE;
     }
-    message_print (message);
+    // message_print (message);
 
     /* incoming messages */
     const gchar *destination = g_dbus_message_get_destination (message);
@@ -925,7 +925,7 @@ bus_dbus_impl_forward_message_idle_cb (BusDBusImpl   *dbus)
                                         message, NULL, &error);
         if (!retval) {
             g_warning ("send error failed:  %s.", error->message);
-            message_print (message);
+            // message_print (message);
             g_error_free (error);
         }
     }

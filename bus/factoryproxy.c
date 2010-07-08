@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include "factoryproxy.h"
-#include <ibusinternal.h>
+#include "types.h"
 #include "marshalers.h"
 #include "dbusimpl.h"
 #include "option.h"

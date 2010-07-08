@@ -18,12 +18,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include "registry.h"
 #include <glib/gstdio.h>
 #include <gio/gio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ibusinternal.h>
-#include "registry.h"
+#include "types.h"
 #include "option.h"
 
 enum {

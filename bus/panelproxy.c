@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include "panelproxy.h"
-#include <ibusinternal.h>
+#include "types.h"
 #include "marshalers.h"
 
 enum {

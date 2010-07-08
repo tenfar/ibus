@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include "engineproxy.h"
-#include <ibusinternal.h>
+#include "types.h"
 #include "marshalers.h"
 #include "ibusimpl.h"
 #include "option.h"

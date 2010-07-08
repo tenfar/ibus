@@ -80,6 +80,7 @@ ibus_daemon_SOURCES =       \
 	option.h                \
 	marshalers.c            \
 	marshalers.h            \
+	types.h                 \
 	$(NULL)
 ibus_daemon_CFLAGS =        \
 	$(AM_CFLAGS)            \

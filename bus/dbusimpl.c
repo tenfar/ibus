@@ -20,7 +20,7 @@
  */
 #include "dbusimpl.h"
 #include <string.h>
-#include <ibusinternal.h>
+#include "types.h"
 #include "marshalers.h"
 #include "matchrule.h"
 

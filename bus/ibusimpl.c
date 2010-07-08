@@ -27,7 +27,7 @@
 #include <locale.h>
 #include <string.h>
 #include <strings.h>
-#include <ibusinternal.h>
+#include "types.h"
 #include "ibusimpl.h"
 #include "dbusimpl.h"
 #include "server.h"

@@ -685,19 +685,21 @@ message_print(GDBusMessage *message)
 {
     switch (g_dbus_message_get_message_type (message)) {
     case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
-        g_debug ("From %s to %s, CALL(%u) %s.%s",
+        g_debug ("From %s to %s, CALL(%u) %s.%s (%s)",
             g_dbus_message_get_sender (message),
             g_dbus_message_get_destination (message),
             g_dbus_message_get_serial (message),
             g_dbus_message_get_interface (message),
-            g_dbus_message_get_member (message)
+            g_dbus_message_get_member (message),
+            g_dbus_message_get_signature (message)
             );
         break;
     case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
-        g_debug ("From %s to %s, RETURN(%u)",
+        g_debug ("From %s to %s, RETURN(%u) (%s)",
             g_dbus_message_get_sender (message),
             g_dbus_message_get_destination (message),
-            g_dbus_message_get_reply_serial (message)
+            g_dbus_message_get_reply_serial (message),
+            g_dbus_message_get_signature (message)
             );
         break;
     case G_DBUS_MESSAGE_TYPE_ERROR:
@@ -709,10 +711,12 @@ message_print(GDBusMessage *message)
             );
         break;
     case G_DBUS_MESSAGE_TYPE_SIGNAL:
-        g_debug ("From %s to %s, SIGNAL %s",
+        g_debug ("From %s to %s, SIGNAL %s.%s (%s)",
             g_dbus_message_get_sender (message),
             g_dbus_message_get_destination (message),
-            g_dbus_message_get_member (message)
+            g_dbus_message_get_interface (message),
+            g_dbus_message_get_member (message),
+            g_dbus_message_get_signature (message)
             );
         break;
     default:
@@ -912,11 +916,15 @@ bus_dbus_impl_forward_message_idle_cb (BusDBusImpl   *dbus)
     BusConnection *dest_connection = destination != NULL ?
             bus_dbus_impl_get_connection_by_name (dbus, destination): NULL;
     if (dest_connection != NULL) {
+        /* FIXME it is a workaround for gdbus. gdbus can not set an empty body message with signature '()' */
+        if (g_dbus_message_get_body (message) == NULL)
+            g_dbus_message_set_signature (message, NULL);
         GError *error = NULL;
         gboolean retval = g_dbus_connection_send_message (bus_connection_get_dbus_connection (dest_connection),
                                         message, NULL, &error);
         if (!retval) {
-            g_debug ("send error failed:  %s.", error->message);
+            g_debug ("!!! send error failed:  %s.", error->message);
+            message_print (message);
             g_error_free (error);
         }
     }

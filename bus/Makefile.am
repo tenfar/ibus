@@ -24,34 +24,26 @@ NULL =
 
 libibus = $(top_builddir)/src/libibus-2.0.la
 
-INCLUDES = \
-	-I$(top_srcdir)/src \
+INCLUDES =                \
+	-I$(top_srcdir)/src   \
 	-I$(top_builddir)/src \
 	$(NULL)
 
-AM_CFLAGS = \
-	@GLIB2_CFLAGS@ \
-	@GTHREAD2_CFLAGS@ \
-	-DG_LOG_DOMAIN=\"IBUS\" \
+AM_CFLAGS =                        \
+	@GLIB2_CFLAGS@                 \
+	@GTHREAD2_CFLAGS@              \
+	-DG_LOG_DOMAIN=\"IBUS\"        \
 	-DPKGDATADIR=\"$(pkgdatadir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DBINDIR=\"@bindir@\" \
-	$(INCLUDES) \
+	-DBINDIR=\"@bindir@\"          \
+	$(INCLUDES)                    \
 	$(NULL)
-AM_LDADD = \
-	@GOBJECT2_LIBS@ \
-	@GLIB2_LIBS@ \
-	@GTHREAD2_LIBS@ \
-	$(libibus) \
+AM_LDADD =                  \
+	@GOBJECT2_LIBS@         \
+	@GLIB2_LIBS@            \
+	@GTHREAD2_LIBS@         \
+	$(libibus)              \
 	$(NULL)
-
-# TESTS = \
-# 	test-matchrule \
-# 	$(NULL)
-xdgautostart_DATA = \
-	ibus.desktop \
-	$(NULL)
-xdgautostartdir = $(sysconfdir)/xdg/autostart
 
 desktopdir = $(datadir)/applications
 desktop_in_files = ibus.desktop.in
@@ -60,59 +52,65 @@ desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 
 noinst_PROGRAMS = $(TESTS)
 bin_PROGRAMS = ibus-daemon
-ibus_daemon_DEPENDENCIES = \
-	$(libibus) \
+ibus_daemon_DEPENDENCIES =  \
+	$(libibus)              \
 	$(NULL)
-ibus_daemon_SOURCES = \
-	main.c \
-	dbusimpl.c \
-	dbusimpl.h \
-	ibusimpl.c \
-	ibusimpl.h \
-	inputcontext.c \
-	inputcontext.h \
-	engineproxy.c \
-	engineproxy.h \
-	panelproxy.c \
-	panelproxy.h \
-	factoryproxy.c \
-	factoryproxy.h \
-	server.c \
-	server.h \
-	connection.c \
-	connection.h \
-	matchrule.c \
-	matchrule.h \
-	registry.c \
-	registry.h \
-	option.h \
-	marshalers.c \
+ibus_daemon_SOURCES =       \
+	main.c                  \
+	dbusimpl.c              \
+	dbusimpl.h              \
+	ibusimpl.c              \
+	ibusimpl.h              \
+	inputcontext.c          \
+	inputcontext.h          \
+	engineproxy.c           \
+	engineproxy.h           \
+	panelproxy.c            \
+	panelproxy.h            \
+	factoryproxy.c          \
+	factoryproxy.h          \
+	server.c                \
+	server.h                \
+	connection.c            \
+	connection.h            \
+	matchrule.c             \
+	matchrule.h             \
+	registry.c              \
+	registry.h              \
+	option.h                \
+	marshalers.c            \
+	marshalers.h            \
 	$(NULL)
-ibus_daemon_CFLAGS = \
-	$(AM_CFLAGS) \
+ibus_daemon_CFLAGS =        \
+	$(AM_CFLAGS)            \
 	$(NULL)
-ibus_daemon_LDADD = \
-	$(AM_LDADD) \
+ibus_daemon_LDADD =         \
+	$(AM_LDADD)             \
 	$(NULL)
 
-# test_registry_SOURCES = \
-# 	registry.c \
-# 	registry.h \
-# 	factoryproxy.c \
-# 	factoryproxy.h \
-# 	test-registry.c \
+BUILT_SOURCES =             \
+	marshalers.h            \
+	marshalers.c            \
+	$(NULL)
+
+# test_registry_SOURCES =   \
+# 	registry.c              \
+# 	registry.h              \
+# 	factoryproxy.c          \
+# 	factoryproxy.h          \
+# 	test-registry.c         \
 # 	$(NULL)
 
-test_matchrule_SOURCES = \
-	connection.c \
-	matchrule.c \
-	test-matchrule.c \
+test_matchrule_SOURCES =    \
+	connection.c            \
+	matchrule.c             \
+	test-matchrule.c        \
 	$(NULL)
-test_matchrule_CFLAGS = \
-	$(AM_CFLAGS) \
+test_matchrule_CFLAGS =     \
+	$(AM_CFLAGS)            \
 	$(NULL)
-test_matchrule_LDADD = \
-	$(AM_LDADD) \
+test_matchrule_LDADD =      \
+	$(AM_LDADD)             \
 	$(NULL)
 
 # gen marshal
@@ -125,12 +123,13 @@ marshalers.c: marshalers.h marshalers.list
 	$(GLIB_GENMARSHAL) --prefix=bus_marshal $(srcdir)/marshalers.list --body --internal) > $@.tmp && \
 	mv $@.tmp $@
 
-EXTRA_DIST = \
-	$(desktop_in_files) \
+EXTRA_DIST =                \
+	$(desktop_in_files)     \
+	marshalers.list         \
 	$(NULL)
 
-DISTCLEANFILES = \
-	$(desktop_DATA) \
+DISTCLEANFILES =            \
+	$(desktop_DATA)         \
 	$(NULL)
 
 $(libibus):

@@ -219,7 +219,7 @@ AC_ARG_ENABLE(python,
 )
 
 AM_CONDITIONAL([ENABLE_PYTHON], [test x"$enable_python" = x"yes"])
-AM_CONDITIONAL([ENABLE_DAEMON], [false])
+AM_CONDITIONAL([ENABLE_DAEMON], [true])
 
 if test x"$enable_python" = x"yes"; then
     # check python

@@ -139,6 +139,7 @@ ibusinclude_HEADERS =       \
 
 ibus_privite_headers =      \
 	ibusconfigprivate.h     \
+	ibusinternal.h          \
 	keyname-table.h         \
 	$(NULL)
 noinst_HEADERS =            \

@@ -351,6 +351,8 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         { "CursorDownLookupTable",  CURSOR_DOWN_LOOKUP_TABLE },
     };
 
+    g_debug ("get signal %s", signal_name);
+
     gint i;
     for (i = 0; i < G_N_ELEMENTS (signals); i++) {
         if (g_strcmp0 (signal_name, signals[i].signal_name) == 0) {

@@ -711,12 +711,13 @@ message_print(GDBusMessage *message)
             );
         break;
     case G_DBUS_MESSAGE_TYPE_SIGNAL:
-        g_debug ("From %s to %s, SIGNAL %s.%s (%s)",
+        g_debug ("From %s to %s, SIGNAL %s.%s (%s) @ %s",
             g_dbus_message_get_sender (message),
             g_dbus_message_get_destination (message),
             g_dbus_message_get_interface (message),
             g_dbus_message_get_member (message),
-            g_dbus_message_get_signature (message)
+            g_dbus_message_get_signature (message),
+            g_dbus_message_get_path (message)
             );
         break;
     default:
@@ -923,13 +924,13 @@ bus_dbus_impl_forward_message_idle_cb (BusDBusImpl   *dbus)
         gboolean retval = g_dbus_connection_send_message (bus_connection_get_dbus_connection (dest_connection),
                                         message, NULL, &error);
         if (!retval) {
-            g_debug ("!!! send error failed:  %s.", error->message);
+            g_warning ("send error failed:  %s.", error->message);
             message_print (message);
             g_error_free (error);
         }
     }
     else {
-        g_debug ("Can not get dest");
+        /* FIXME can not get destination */
 #if 0
         if (g_dbus_message_get_message_type (message) == G_DBUS_MESSAGE_TYPE_METHOD_CALL) {
             /* reply an error message, if the destination does not exist */

@@ -733,8 +733,13 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
                                     gboolean         incoming,
                                     gpointer         user_data)
 {
+    g_assert (G_IS_DBUS_CONNECTION (dbus_connection));
+    g_assert (G_IS_DBUS_MESSAGE (message));
+    g_assert (BUS_IS_DBUS_IMPL (user_data));
+
     BusDBusImpl *dbus = (BusDBusImpl *) user_data;
     BusConnection *connection = bus_connection_lookup (dbus_connection);
+    g_assert (connection != NULL);
 
     if (incoming) {
         g_dbus_message_set_sender (message, bus_connection_get_unique_name (connection));
@@ -914,10 +919,11 @@ bus_dbus_impl_forward_message_idle_cb (BusDBusImpl   *dbus)
     g_mutex_unlock (dbus->forward_lock);
 
     const gchar *destination = g_dbus_message_get_destination (message);
-    BusConnection *dest_connection = destination != NULL ?
-            bus_dbus_impl_get_connection_by_name (dbus, destination): NULL;
+    BusConnection *dest_connection = NULL;
+    if (destination != NULL)
+            dest_connection = bus_dbus_impl_get_connection_by_name (dbus, destination);
     if (dest_connection != NULL) {
-        /* FIXME it is a workaround for gdbus. gdbus can not set an empty body message with signature '()' */
+        /* FIXME workaround for gdbus. gdbus can not set an empty body message with signature '()' */
         if (g_dbus_message_get_body (message) == NULL)
             g_dbus_message_set_signature (message, NULL);
         GError *error = NULL;
@@ -959,7 +965,7 @@ bus_dbus_impl_forward_message (BusDBusImpl   *dbus,
 {
     g_assert (BUS_IS_DBUS_IMPL (dbus));
     g_assert (BUS_IS_CONNECTION (connection));
-    g_assert (message != NULL);
+    g_assert (G_IS_DBUS_MESSAGE (message));
 
     if (G_UNLIKELY (IBUS_OBJECT_DESTROYED (dbus)))
         return;

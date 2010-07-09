@@ -480,9 +480,10 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     };
 
     if (g_strcmp0 (signal_name, "CommitText") == 0) {
-        IBusText *text;
-
-        text = (IBusText *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
+        GVariant *variant = NULL;
+        g_variant_get (parameters, "v", &variant);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
         g_signal_emit (context, context_signals[COMMIT_TEXT], 0, text);
 
         if (g_object_is_floating (text))
@@ -490,12 +491,12 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
         return;
     }
     if (g_strcmp0 (signal_name, "UpdatePreeditText") == 0) {
-        IBusText *text;
+        GVariant *variant = NULL;
         gint32 cursor_pos;
         gboolean visible;
-
-        text = (IBusText *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
-        g_variant_get_child (parameters, 1, "ub", &cursor_pos, &visible);
+        g_variant_get (parameters, "vub", &variant, &cursor_pos, &visible);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
 
         g_signal_emit (context,
                        context_signals[UPDATE_PREEDIT_TEXT],
@@ -521,11 +522,11 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     }
 
     if (g_strcmp0 (signal_name, "UpdateAuxiliaryText") == 0) {
-        IBusText *text;
+        GVariant *variant = NULL;
         gboolean visible;
-
-        text = (IBusText *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
-        g_variant_get_child (parameters, 1, "b", &visible);
+        g_variant_get (parameters, "vb", &variant, &visible);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
 
         g_signal_emit (context,
                        context_signals[UPDATE_AUXILIARY_TEXT],
@@ -538,11 +539,12 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     }
 
     if (g_strcmp0 (signal_name, "UpdateLookupTable") == 0) {
-        IBusLookupTable *table;
+        GVariant *variant = NULL;
         gboolean visible;
+        g_variant_get (parameters, "vb", &variant, &visible);
 
-        table = (IBusLookupTable *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
-        g_variant_get_child (parameters, 1, "b", &visible);
+        IBusLookupTable *table = IBUS_LOOKUP_TABLE (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
 
         g_signal_emit (context,
                        context_signals[UPDATE_LOOKUP_TABLE],
@@ -556,9 +558,11 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     }
 
     if (g_strcmp0 (signal_name, "RegisterProperties") == 0) {
-        IBusPropList *prop_list;
+        GVariant *variant = NULL;
+        g_variant_get (parameters, "v", &variant);
 
-        prop_list = (IBusPropList *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
+        IBusPropList *prop_list = IBUS_PROP_LIST (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
 
         g_signal_emit (context,
                        context_signals[REGISTER_PROPERTIES],
@@ -571,9 +575,10 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     }
 
     if (g_strcmp0 (signal_name, "UpdateProperty") == 0) {
-        IBusProperty *prop;
-
-        prop = (IBusProperty *)ibus_serializable_deserialize (g_variant_get_child_value (parameters, 0));
+        GVariant *variant = NULL;
+        g_variant_get (parameters, "v", &variant);
+        IBusProperty *prop = IBUS_PROPERTY (ibus_serializable_deserialize (variant));
+        g_variant_unref (variant);
 
         g_signal_emit (context, context_signals[UPDATE_PROPERTY], 0, prop);
 
@@ -872,8 +877,9 @@ ibus_input_context_get_engine (IBusInputContext *context)
         return NULL;
     }
 
-    IBusEngineDesc *desc = NULL;
-    desc = (IBusEngineDesc *)ibus_serializable_deserialize (g_variant_get_child_value (result, 0));
+    GVariant *variant = g_variant_get_child_value (result, 0);
+    IBusEngineDesc *desc = IBUS_ENGINE_DESC (ibus_serializable_deserialize (variant));
+    g_variant_unref (variant);
     g_variant_unref (result);
 
     return desc;

@@ -19,6 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include "ibusshare.h"
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <glib-object.h>
@@ -27,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "ibusshare.h"
+#include <ibus.h>
 
 static gchar *_display = NULL;
 
@@ -292,6 +293,12 @@ void
 ibus_init (void)
 {
     g_type_init ();
+    IBUS_TYPE_TEXT;
+    IBUS_TYPE_ATTRIBUTE;
+    IBUS_TYPE_ATTR_LIST;
+    IBUS_TYPE_LOOKUP_TABLE;
+    IBUS_TYPE_COMPONENT;
+    IBUS_TYPE_ENGINE_DESC;
 }
 
 static GMainLoop *main_loop = NULL;

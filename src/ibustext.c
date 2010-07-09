@@ -109,8 +109,8 @@ ibus_text_deserialize (IBusText *text,
 
     GVariant *var = g_variant_get_child_value (variant, retval++);
     text->attrs = IBUS_ATTR_LIST (ibus_serializable_deserialize (var));
-    g_object_ref_sink (text->attrs);
     g_variant_unref (var);
+    g_object_ref_sink (text->attrs);
 
     return retval;
 }

@@ -101,12 +101,12 @@ ibus_prop_list_deserialize (IBusPropList    *prop_list,
 
     g_return_val_if_fail (IBUS_IS_PROP_LIST (prop_list), 0);
 
-    GVariantIter *iter;
-    GVariant *var;
+    GVariantIter *iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
+    g_return_val_if_fail (iter != NULL, retval);
+    GVariant *var;
     while (g_variant_iter_loop (iter, "v", &var)) {
-        ibus_prop_list_append (prop_list, (IBusProperty *)ibus_serializable_deserialize (var));
-        g_variant_unref (var);
+        ibus_prop_list_append (prop_list, IBUS_PROPERTY (ibus_serializable_deserialize (var)));
     }
     g_variant_iter_free (iter);
 

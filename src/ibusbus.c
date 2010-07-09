@@ -720,11 +720,13 @@ ibus_bus_do_list_engines (IBusBus *bus, gboolean active_engines_only)
                             G_VARIANT_TYPE ("(av)"));
 
     if (result) {
-        GVariantIter *iter;
-        GVariant *var;
+        GVariantIter *iter = NULL;
         g_variant_get (result, "(av)", &iter);
-        while (g_variant_iter_loop (iter, "v", &var))
+        GVariant *var;
+        while (g_variant_iter_loop (iter, "v", &var)) {
             retval = g_list_append (retval, ibus_serializable_deserialize (var));
+        }
+        g_variant_iter_free (iter);
         g_variant_unref (result);
     }
 

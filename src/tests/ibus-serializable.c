@@ -105,6 +105,17 @@ test_property (void)
                                                     TRUE,
                                                     PROP_STATE_UNCHECKED,
                                                     NULL));
+    ibus_prop_list_append (list, ibus_property_new ("sub2",
+                                                    PROP_TYPE_NORMAL,
+                                                    ibus_text_new_from_static_string ("label_sub1"),
+                                                    "icon_sub1",
+                                                    ibus_text_new_from_static_string ("tooltip_sub1"),
+                                                    TRUE,
+                                                    TRUE,
+                                                    PROP_STATE_UNCHECKED,
+                                                    NULL));
+    g_object_ref (list);
+    test_serializable ((IBusSerializable *)list);
     test_serializable ((IBusSerializable *)ibus_property_new ("key",
                                                           PROP_TYPE_NORMAL,
                                                           ibus_text_new_from_static_string ("label"),

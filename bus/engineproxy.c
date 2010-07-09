@@ -351,8 +351,6 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         { "CursorDownLookupTable",  CURSOR_DOWN_LOOKUP_TABLE },
     };
 
-    g_debug ("get signal %s", signal_name);
-
     gint i;
     for (i = 0; i < G_N_ELEMENTS (signals); i++) {
         if (g_strcmp0 (signal_name, signals[i].signal_name) == 0) {
@@ -362,10 +360,11 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
     }
 
     if (g_strcmp0 (signal_name, "CommitText") == 0) {
-        GVariant *arg0 = g_variant_get_child_value (parameters, 0);
+        GVariant *arg0 = NULL;
+        g_variant_get(parameters, "(v)", &arg0);
         g_return_if_fail (arg0 != NULL);
 
-        IBusText *text = (IBusText *)ibus_serializable_deserialize (arg0);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (text != NULL);
         g_signal_emit (engine, engine_signals[COMMIT_TEXT], 0, text);
@@ -387,7 +386,7 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
     else if (g_strcmp0 (signal_name, "DeleteSurroundingText") == 0) {
         gint  offset_from_cursor = 0;
         guint nchars = 0;
-        g_variant_get (parameters, "(uuu)", &offset_from_cursor, &nchars);
+        g_variant_get (parameters, "(iu)", &offset_from_cursor, &nchars);
 
         g_signal_emit (engine,
                        engine_signals[DELETE_SURROUNDING_TEXT],
@@ -395,14 +394,14 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
     }
     else if (g_strcmp0 (signal_name, "UpdatePreeditText") == 0) {
         GVariant *arg0 = NULL;
-        gint cursor_pos = 0;
+        guint cursor_pos = 0;
         gboolean visible = FALSE;
         guint mode = 0;
 
-        g_variant_get (parameters, "(vibu)", &arg0, &cursor_pos, &visible, &mode);
+        g_variant_get (parameters, "(vubu)", &arg0, &cursor_pos, &visible, &mode);
         g_return_if_fail (arg0 != NULL);
 
-        IBusText *text = (IBusText *)ibus_serializable_deserialize (arg0);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (text != NULL);
 
@@ -419,7 +418,7 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         g_variant_get (parameters, "(vb)", &arg0, &visible);
         g_return_if_fail (arg0 != NULL);
 
-        IBusText *text = (IBusText *)ibus_serializable_deserialize (arg0);
+        IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (text != NULL);
 
@@ -433,7 +432,7 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         g_variant_get (parameters, "(vb)", &arg0, &visible);
         g_return_if_fail (arg0 != NULL);
 
-        IBusLookupTable *table = (IBusLookupTable *)ibus_serializable_deserialize (arg0);
+        IBusLookupTable *table = IBUS_LOOKUP_TABLE (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (table != NULL);
 
@@ -441,10 +440,11 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         _g_object_unref_if_floating (table);
     }
     else if (g_strcmp0 (signal_name, "RegisterProperties") == 0) {
-        GVariant *arg0 = g_variant_get_child_value (parameters, 0);
+        GVariant *arg0 = NULL;
+        g_variant_get (parameters, "(v)", &arg0);
         g_return_if_fail (arg0 != NULL);
 
-        IBusPropList *prop_list = (IBusPropList *)ibus_serializable_deserialize (arg0);
+        IBusPropList *prop_list = IBUS_PROP_LIST (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (prop_list != NULL);
 
@@ -452,10 +452,11 @@ bus_engine_proxy_g_signal (GDBusProxy  *proxy,
         _g_object_unref_if_floating (prop_list);
     }
     else if (g_strcmp0 (signal_name, "UpdateProperty") == 0) {
-        GVariant *arg0 = g_variant_get_child_value (parameters, 0);
+        GVariant *arg0 = NULL;
+        g_variant_get (parameters, "(v)", &arg0);
         g_return_if_fail (arg0 != NULL);
 
-        IBusProperty *prop = (IBusProperty *)ibus_serializable_deserialize (arg0);
+        IBusProperty *prop = IBUS_PROPERTY (ibus_serializable_deserialize (arg0));
         g_variant_unref (arg0);
         g_return_if_fail (prop != NULL);
 

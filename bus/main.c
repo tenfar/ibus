@@ -216,7 +216,7 @@ main (gint argc, gchar **argv)
     /* create a new process group */
     setpgid (0, 0);
 
-    g_type_init ();
+    ibus_init ();
 
 #ifdef G_THREADS_ENABLED
     g_thread_init (NULL);

@@ -139,14 +139,12 @@ ibus_lookup_table_deserialize (IBusLookupTable *table,
     g_variant_get_child (variant, retval++, "b", &table->round);
     g_variant_get_child (variant, retval++, "i", &table->orientation);
 
-    GVariantIter *iter;
     GVariant *var;
     // deserialize candidates
-    iter = NULL;
+    GVariantIter *iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
     while (g_variant_iter_loop (iter, "v", &var)) {
-        ibus_lookup_table_append_candidate (table, (IBusText *)ibus_serializable_deserialize (var));
-        g_variant_unref (var);
+        ibus_lookup_table_append_candidate (table, IBUS_TEXT (ibus_serializable_deserialize (var)));
     }
     g_variant_iter_free (iter);
 
@@ -154,8 +152,7 @@ ibus_lookup_table_deserialize (IBusLookupTable *table,
     iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
     while (g_variant_iter_loop (iter, "v", &var)) {
-        ibus_lookup_table_append_label (table, (IBusText *)ibus_serializable_deserialize (var));
-        g_variant_unref (var);
+        ibus_lookup_table_append_label (table, IBUS_TEXT (ibus_serializable_deserialize (var)));
     }
     g_variant_iter_free (iter);
 

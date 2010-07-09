@@ -123,20 +123,26 @@ ibus_property_deserialize (IBusProperty *prop,
     g_variant_get_child (variant, retval++, "s", &prop->key);
     g_variant_get_child (variant, retval++, "u", &prop->type);
 
-    prop->label = (IBusText *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
+    GVariant *subvar = g_variant_get_child_value (variant, retval++);
+    prop->label = IBUS_TEXT (ibus_serializable_deserialize (subvar));
     g_object_ref_sink (prop->label);
+    g_variant_unref (subvar);
 
     g_variant_get_child (variant, retval++, "s", &prop->icon);
 
-    prop->tooltip = (IBusText *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
+    subvar = g_variant_get_child_value (variant, retval++);
+    prop->tooltip = IBUS_TEXT (ibus_serializable_deserialize (subvar));
     g_object_ref_sink (prop->tooltip);
+    g_variant_unref (subvar);
 
     g_variant_get_child (variant, retval++, "b", &prop->sensitive);
     g_variant_get_child (variant, retval++, "b", &prop->visible);
     g_variant_get_child (variant, retval++, "u", &prop->state);
 
-    prop->sub_props = (IBusPropList *) ibus_serializable_deserialize (g_variant_get_child_value (variant, retval++));
+    subvar = g_variant_get_child_value (variant, retval++);
+    prop->sub_props = IBUS_PROP_LIST (ibus_serializable_deserialize (subvar));
     g_object_ref_sink (prop->sub_props);
+    g_variant_unref (subvar);
 
     return retval;
 }
@@ -198,7 +204,7 @@ ibus_property_new (const gchar   *key,
 
     prop->key = g_strdup (key);
     prop->type = type;
-    
+
     ibus_property_set_label (prop, label);
     ibus_property_set_icon (prop, icon);
     ibus_property_set_tooltip (prop, tooltip);

@@ -189,18 +189,21 @@ ibus_component_deserialize (IBusComponent   *component,
     g_variant_get_child (variant, retval++, "s", &component->exec);
     g_variant_get_child (variant, retval++, "s", &component->textdomain);
 
-    GVariantIter *iter = NULL;
     GVariant *var;
+    GVariantIter *iter = NULL;
+    g_variant_get_child (variant, retval++, "av", &iter);
+    while (g_variant_iter_loop (iter, "v", &var)) {
+        component->observed_paths = g_list_append (component->observed_paths,
+                        IBUS_OBSERVED_PATH (ibus_serializable_deserialize (var)));
+    }
+    g_variant_iter_free (iter);
 
     g_variant_get_child (variant, retval++, "av", &iter);
     while (g_variant_iter_loop (iter, "v", &var)) {
-        component->observed_paths = g_list_append (component->observed_paths, ibus_serializable_deserialize (var));
+        component->engines = g_list_append (component->engines,
+                        IBUS_ENGINE_DESC (ibus_serializable_deserialize (var)));
     }
-
-    g_variant_get_child (variant, retval++, "av", &iter);
-    while (g_variant_iter_loop (iter, "v", &var)) {
-        component->engines = g_list_append (component->engines, ibus_serializable_deserialize (var));
-    }
+    g_variant_iter_free (iter);
 
     return retval;
 }

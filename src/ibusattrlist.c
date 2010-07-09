@@ -102,17 +102,14 @@ static gint
 ibus_attr_list_deserialize (IBusAttrList    *attr_list,
                             GVariant        *variant)
 {
-    gint retval;
-    GVariantIter *iter;
-    GVariant *var;
-
-    retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->deserialize ((IBusSerializable *)attr_list, variant);
+    gint retval = IBUS_SERIALIZABLE_CLASS (ibus_attr_list_parent_class)->deserialize ((IBusSerializable *)attr_list, variant);
     g_return_val_if_fail (retval, 0);
 
+    GVariantIter *iter = NULL;
     g_variant_get_child (variant, retval++, "av", &iter);
+    GVariant *var;
     while (g_variant_iter_loop (iter, "v", &var)) {
-        ibus_attr_list_append (attr_list, (IBusAttribute *)ibus_serializable_deserialize (var));
-        g_variant_unref (var);
+        ibus_attr_list_append (attr_list, IBUS_ATTRIBUTE (ibus_serializable_deserialize (var)));
     }
     g_variant_iter_free (iter);
 

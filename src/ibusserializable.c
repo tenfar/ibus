@@ -251,12 +251,10 @@ static gint
 ibus_serializable_real_deserialize (IBusSerializable *object,
                                     GVariant         *variant)
 {
-    GVariantIter *iter;
     const gchar *key;
     GVariant *value;
-
+    GVariantIter *iter = NULL;
     g_variant_get_child (variant, 1, "a{sv}", &iter);
-
     while (g_variant_iter_loop (iter, "{sv}", &key, &value)) {
         ibus_serializable_set_attachment (object, key, _g_value_deserialize (value));
     }
@@ -397,12 +395,7 @@ ibus_serializable_deserialize (GVariant *variant)
 {
     g_return_val_if_fail (variant != NULL, NULL);
 
-    gboolean retval;
-    gchar *type_name = NULL;
-    GVariant *var;
-    GType type;
-    IBusSerializable *object;
-
+    GVariant *var = NULL;
     switch (g_variant_classify (variant)) {
     case G_VARIANT_CLASS_VARIANT:
         var = g_variant_get_variant (variant);
@@ -414,14 +407,15 @@ ibus_serializable_deserialize (GVariant *variant)
         g_return_val_if_reached (NULL);
     }
 
+    gchar *type_name = NULL;
     g_variant_get_child (var, 0, "&s", &type_name);
-    type = g_type_from_name (type_name);
+    GType type = g_type_from_name (type_name);
 
     g_return_val_if_fail (g_type_is_a (type, IBUS_TYPE_SERIALIZABLE), NULL);
 
-    object = g_object_new (type, NULL);
+    IBusSerializable *object = g_object_new (type, NULL);
 
-    retval = IBUS_SERIALIZABLE_GET_CLASS (object)->deserialize (object, var);
+    gint retval = IBUS_SERIALIZABLE_GET_CLASS (object)->deserialize (object, var);
     g_variant_unref (var);
     if (retval)
         return object;

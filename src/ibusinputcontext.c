@@ -481,7 +481,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
 
     if (g_strcmp0 (signal_name, "CommitText") == 0) {
         GVariant *variant = NULL;
-        g_variant_get (parameters, "v", &variant);
+        g_variant_get (parameters, "(v)", &variant);
         IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
         g_signal_emit (context, context_signals[COMMIT_TEXT], 0, text);
@@ -494,7 +494,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
         GVariant *variant = NULL;
         gint32 cursor_pos;
         gboolean visible;
-        g_variant_get (parameters, "vub", &variant, &cursor_pos, &visible);
+        g_variant_get (parameters, "(vub)", &variant, &cursor_pos, &visible);
         IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
 
@@ -524,7 +524,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     if (g_strcmp0 (signal_name, "UpdateAuxiliaryText") == 0) {
         GVariant *variant = NULL;
         gboolean visible;
-        g_variant_get (parameters, "vb", &variant, &visible);
+        g_variant_get (parameters, "(vb)", &variant, &visible);
         IBusText *text = IBUS_TEXT (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
 
@@ -541,7 +541,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
     if (g_strcmp0 (signal_name, "UpdateLookupTable") == 0) {
         GVariant *variant = NULL;
         gboolean visible;
-        g_variant_get (parameters, "vb", &variant, &visible);
+        g_variant_get (parameters, "(vb)", &variant, &visible);
 
         IBusLookupTable *table = IBUS_LOOKUP_TABLE (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
@@ -559,7 +559,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
 
     if (g_strcmp0 (signal_name, "RegisterProperties") == 0) {
         GVariant *variant = NULL;
-        g_variant_get (parameters, "v", &variant);
+        g_variant_get (parameters, "(v)", &variant);
 
         IBusPropList *prop_list = IBUS_PROP_LIST (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
@@ -576,7 +576,7 @@ ibus_input_context_g_signal (GDBusProxy  *proxy,
 
     if (g_strcmp0 (signal_name, "UpdateProperty") == 0) {
         GVariant *variant = NULL;
-        g_variant_get (parameters, "v", &variant);
+        g_variant_get (parameters, "(v)", &variant);
         IBusProperty *prop = IBUS_PROPERTY (ibus_serializable_deserialize (variant));
         g_variant_unref (variant);
 
@@ -635,12 +635,10 @@ ibus_input_context_process_key_event_cb (IBusInputContext   *context,
                                          GAsyncResult       *res,
                                          guint              *data)
 {
-    GVariant *variant;
-    GError *error;
+    GError *error = NULL;
+    GVariant *variant = g_dbus_proxy_call_finish ((GDBusProxy *) context, res, &error);
+
     gboolean retval = FALSE;
-
-    variant = g_dbus_proxy_call_finish ((GDBusProxy *) context, res, &error);
-
     if (variant == NULL) {
         g_warning ("%s.ProcessKeyEvent: %s", IBUS_INTERFACE_INPUT_CONTEXT, error->message);
         g_error_free (error);
@@ -678,8 +676,8 @@ ibus_input_context_new (const gchar     *path,
                                cancellable,
                                error,
                                "g-connection",      connection,
+                               "g-name",            "org.freedesktop.DBus",
                                "g-flags",           G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-                               "g-name",            IBUS_SERVICE_IBUS,
                                "g-interface-name",  IBUS_INTERFACE_INPUT_CONTEXT,
                                "g-object-path",     path,
                                NULL);
@@ -728,7 +726,7 @@ ibus_input_context_process_key_event (IBusInputContext *context,
     data[1] = keycode;
     data[2] = state;
     g_dbus_proxy_call ((GDBusProxy *) context,
-                       "SetCursorLocation",                 /* method_name */
+                       "ProcessKeyEvent",                   /* method_name */
                        g_variant_new ("(uuu)",
                             keyval, keycode, state),        /* parameters */
                        G_DBUS_CALL_FLAGS_NONE,              /* flags */

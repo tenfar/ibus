@@ -485,6 +485,7 @@ ibus_panel_service_candidate_clicked (IBusPanelService *panel,
     g_return_if_fail (IBUS_IS_PANEL_SERVICE (panel));
     ibus_service_emit_signal ((IBusService *) panel,
                               NULL,
+                              NULL,
                               IBUS_INTERFACE_PANEL,
                               "CandidateClicked",
                               g_variant_new ("(uuu)", index, button, state),
@@ -499,6 +500,7 @@ ibus_panel_service_property_active (IBusPanelService *panel,
     g_return_if_fail (IBUS_IS_PANEL_SERVICE (panel));
     ibus_service_emit_signal ((IBusService *) panel,
                               NULL,
+                              NULL,
                               IBUS_INTERFACE_PANEL,
                               "PropertyActive",
                               g_variant_new ("(si)", prop_name, prop_state),
@@ -511,6 +513,7 @@ ibus_panel_service_property_show (IBusPanelService *panel,
 {
     g_return_if_fail (IBUS_IS_PANEL_SERVICE (panel));
     ibus_service_emit_signal ((IBusService *) panel,
+                              NULL,
                               NULL,
                               IBUS_INTERFACE_PANEL,
                               "PropertyShow",
@@ -525,6 +528,7 @@ ibus_panel_service_property_hide (IBusPanelService *panel,
     g_return_if_fail (IBUS_IS_PANEL_SERVICE (panel));
     ibus_service_emit_signal ((IBusService *) panel,
                               NULL,
+                              NULL,
                               IBUS_INTERFACE_PANEL,
                               "PropertyHide",
                               g_variant_new ("(s)", prop_name),
@@ -537,6 +541,7 @@ ibus_panel_service_property_hide (IBusPanelService *panel,
     {                                                       \
         g_return_if_fail (IBUS_IS_PANEL_SERVICE (panel));   \
         ibus_service_emit_signal ((IBusService *) panel,    \
+                                  NULL,                     \
                                   NULL,                     \
                                   IBUS_INTERFACE_PANEL,     \
                                   #Name,                    \

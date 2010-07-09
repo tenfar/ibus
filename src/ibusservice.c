@@ -578,6 +578,7 @@ ibus_service_unregister (IBusService     *service,
 
 gboolean
 ibus_service_emit_signal (IBusService *service,
+                          const gchar *sender_name,
                           const gchar *dest_bus_name,
                           const gchar *interface_name,
                           const gchar *signal_name,
@@ -590,13 +591,19 @@ ibus_service_emit_signal (IBusService *service,
     g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
     g_return_val_if_fail (service->priv->connection != NULL, FALSE);
 
-    return g_dbus_connection_emit_signal (service->priv->connection,
-                                          dest_bus_name,
-                                          service->priv->object_path,
-                                          interface_name,
-                                          signal_name,
-                                          parameters,
-                                          error);
+    GDBusMessage *message = g_dbus_message_new_signal (service->priv->object_path,
+                                                       interface_name,
+                                                       signal_name);
+    if (sender_name != NULL)
+        g_dbus_message_set_sender (message, sender_name);
+    if (dest_bus_name != NULL)
+        g_dbus_message_set_destination (message, dest_bus_name);
+    if (parameters != NULL)
+        g_dbus_message_set_body (message, parameters);
+
+    gboolean retval =  g_dbus_connection_send_message (service->priv->connection,
+                                                       message, NULL, error);
+    return retval;
 }
 
 gboolean

@@ -679,7 +679,7 @@ bus_dbus_impl_service_set_property (IBusService        *service,
 
 }
 
-#if 0
+#if 1
 static void
 message_print(GDBusMessage *message)
 {
@@ -753,10 +753,10 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
     if (!incoming) {
         /* outgoing messages */
         /* dispatch the outgoing message by rule */
+        // message_print (message);
         bus_dbus_impl_dispatch_message_by_rule (dbus, message, connection);
         return FALSE;
     }
-    // message_print (message);
 
     /* incoming messages */
     const gchar *destination = g_dbus_message_get_destination (message);
@@ -774,6 +774,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         default:
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            message_print (message);
             g_return_val_if_reached (FALSE);
         }
     }
@@ -789,6 +790,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         default:
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            message_print (message);
             g_return_val_if_reached (FALSE);
         }
     }
@@ -805,6 +807,7 @@ bus_dbus_impl_connection_filter_cb (GDBusConnection *dbus_connection,
         default:
             /* dispatch signal messages by match rule */
             bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+            message_print (message);
             g_return_val_if_reached (FALSE);
         }
     }

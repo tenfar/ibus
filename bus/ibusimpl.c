@@ -254,7 +254,6 @@ bus_ibus_impl_set_hotkey (BusIBusImpl *ibus,
         return;
     }
 
-    g_debug ("value=%s", g_variant_print (value, TRUE));
     GVariantIter iter;
     g_variant_iter_init (&iter, value);
     const gchar *str = NULL;
@@ -1560,6 +1559,7 @@ static void
 bus_ibus_impl_registry_changed (BusIBusImpl *ibus)
 {
     ibus_service_emit_signal ((IBusService *) ibus,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus",
                               "RegistryChanged",
@@ -1571,6 +1571,7 @@ static void
 bus_ibus_impl_global_engine_changed (BusIBusImpl *ibus)
 {
     ibus_service_emit_signal ((IBusService *) ibus,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus",
                               "GlobalEngineChanged",

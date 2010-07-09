@@ -1069,6 +1069,7 @@ bus_input_context_commit_text (BusInputContext *context,
 
     GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)text);
     ibus_service_emit_signal ((IBusService *)context,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus.InputContext",
                               "CommitText",
@@ -1097,6 +1098,7 @@ bus_input_context_update_preedit_text (BusInputContext *context,
     if (PREEDIT_CONDITION) {
         GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)context->preedit_text);
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "UpdatePreeditText",
@@ -1126,6 +1128,7 @@ bus_input_context_show_preedit_text (BusInputContext *context)
 
     if (PREEDIT_CONDITION) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "ShowPreeditText",
@@ -1152,6 +1155,7 @@ bus_input_context_hide_preedit_text (BusInputContext *context)
 
     if (PREEDIT_CONDITION) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "HidePreeditText",
@@ -1182,6 +1186,7 @@ bus_input_context_update_auxiliary_text (BusInputContext *context,
     if (context->capabilities & IBUS_CAP_AUXILIARY_TEXT) {
         GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)text);
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "UpdateAuxiliaryText",
@@ -1210,6 +1215,7 @@ bus_input_context_show_auxiliary_text (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_AUXILIARY_TEXT) == IBUS_CAP_AUXILIARY_TEXT) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "ShowAuxiliaryText",
@@ -1236,6 +1242,7 @@ bus_input_context_hide_auxiliary_text (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_AUXILIARY_TEXT) == IBUS_CAP_AUXILIARY_TEXT) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "HideAuxiliaryText",
@@ -1266,6 +1273,7 @@ bus_input_context_update_lookup_table (BusInputContext *context,
     if (context->capabilities & IBUS_CAP_LOOKUP_TABLE) {
         GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)table);
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "UpdateLookupTable",
@@ -1294,6 +1302,7 @@ bus_input_context_show_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "ShowLookupTable",
@@ -1320,6 +1329,7 @@ bus_input_context_hide_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "HideLookupTable",
@@ -1344,6 +1354,7 @@ bus_input_context_page_up_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "PageUpLookupTable",
@@ -1368,6 +1379,7 @@ bus_input_context_page_down_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "PageDownLookupTable",
@@ -1392,6 +1404,7 @@ bus_input_context_cursor_up_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "CursorUpLookupTable",
@@ -1416,6 +1429,7 @@ bus_input_context_cursor_down_lookup_table (BusInputContext *context)
 
     if ((context->capabilities & IBUS_CAP_LOOKUP_TABLE) == IBUS_CAP_LOOKUP_TABLE) {
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "CursorDownLookupTable",
@@ -1439,6 +1453,7 @@ bus_input_context_register_properties (BusInputContext *context,
     if (context->capabilities & IBUS_CAP_PROPERTY) {
         GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)props);
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "RegisterProperties",
@@ -1463,6 +1478,7 @@ bus_input_context_update_property (BusInputContext *context,
     if (context->capabilities & IBUS_CAP_PROPERTY) {
         GVariant *variant = ibus_serializable_serialize ((IBusSerializable *)prop);
         ibus_service_emit_signal ((IBusService *)context,
+                                  "org.freedesktop.DBus",
                                   NULL,
                                   "org.freedesktop.IBus.InputContext",
                                   "UpdateProperty",
@@ -1519,6 +1535,7 @@ _engine_forward_key_event_cb (BusEngineProxy    *engine,
         return;
 
     ibus_service_emit_signal ((IBusService *)context,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus.InputContext",
                               "ForwardKeyEvent",
@@ -1541,6 +1558,7 @@ _engine_delete_surrounding_text_cb (BusEngineProxy    *engine,
         return;
 
     ibus_service_emit_signal ((IBusService *)context,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus.InputContext",
                               "DeleteSurroundingText",
@@ -1727,6 +1745,7 @@ bus_input_context_enable (BusInputContext *context)
     bus_engine_proxy_set_cursor_location (context->engine, context->x, context->y, context->w, context->h);
 
     ibus_service_emit_signal ((IBusService *)context,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus.InputContext",
                               "Enabled",
@@ -1753,6 +1772,7 @@ bus_input_context_disable (BusInputContext *context)
     }
 
     ibus_service_emit_signal ((IBusService *)context,
+                              "org.freedesktop.DBus",
                               NULL,
                               "org.freedesktop.IBus.InputContext",
                               "Disabled",

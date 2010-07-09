@@ -180,6 +180,7 @@ void             ibus_service_unregister        (IBusService        *service,
  * @see_also: g_dbus_connection_emit_signal()
  */
 gboolean         ibus_service_emit_signal       (IBusService        *service,
+                                                 const gchar        *sender_name,
                                                  const gchar        *dest_bus_name,
                                                  const gchar        *interface_name,
                                                  const gchar        *signal_name,

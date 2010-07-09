@@ -255,7 +255,7 @@ ibus_serializable_real_deserialize (IBusSerializable *object,
     GVariant *value;
     GVariantIter *iter = NULL;
     g_variant_get_child (variant, 1, "a{sv}", &iter);
-    while (g_variant_iter_loop (iter, "{sv}", &key, &value)) {
+    while (g_variant_iter_loop (iter, "{&sv}", &key, &value)) {
         ibus_serializable_set_attachment (object, key, _g_value_deserialize (value));
     }
     g_variant_iter_free (iter);

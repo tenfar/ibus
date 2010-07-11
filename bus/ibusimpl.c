@@ -1556,27 +1556,31 @@ bus_ibus_impl_get_registry (BusIBusImpl *ibus)
 }
 
 static void
+bus_ibus_impl_emit_signal (BusIBusImpl *ibus,
+                           const gchar *signal_name,
+                           GVariant     *parameters)
+{
+
+    GDBusMessage *message = g_dbus_message_new_signal ("/org/freedesktop/IBus",
+                                                       "org.freedesktop.DBus",
+                                                       signal_name);
+    g_dbus_message_set_sender (message, "org.freedesktop.DBus");
+    if (parameters)
+        g_dbus_message_set_body (message, parameters);
+    bus_dbus_impl_dispatch_message_by_rule (BUS_DEFAULT_DBUS, message, NULL);
+    g_object_unref (message);
+}
+
+static void
 bus_ibus_impl_registry_changed (BusIBusImpl *ibus)
 {
-    ibus_service_emit_signal ((IBusService *) ibus,
-                              "org.freedesktop.DBus",
-                              NULL,
-                              "org.freedesktop.IBus",
-                              "RegistryChanged",
-                              NULL,
-                              NULL);
+    bus_ibus_impl_emit_signal (ibus, "RegistryChanged", NULL);
 }
 
 static void
 bus_ibus_impl_global_engine_changed (BusIBusImpl *ibus)
 {
-    ibus_service_emit_signal ((IBusService *) ibus,
-                              "org.freedesktop.DBus",
-                              NULL,
-                              "org.freedesktop.IBus",
-                              "GlobalEngineChanged",
-                              NULL,
-                              NULL);
+    bus_ibus_impl_emit_signal (ibus, "GlobalEngineChanged", NULL);
 }
 
 gboolean

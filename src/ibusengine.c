@@ -954,7 +954,6 @@ ibus_engine_emit_signal (IBusEngine  *engine,
 {
     ibus_service_emit_signal ((IBusService *)engine,
                               NULL,
-                              NULL,
                               IBUS_INTERFACE_ENGINE,
                               signal_name,
                               parameters,

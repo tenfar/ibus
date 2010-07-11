@@ -580,6 +580,7 @@ bus_dbus_impl_name_owner_changed (BusDBusImpl   *dbus,
     g_dbus_message_set_body (message,
                              g_variant_new ("(sss)", name, old_owner, new_owner));
     bus_dbus_impl_dispatch_message_by_rule (dbus, message, NULL);
+    g_object_unref (message);
 }
 
 static void

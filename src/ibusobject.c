@@ -20,6 +20,7 @@
  */
 
 #include "ibusobject.h"
+#include "ibusmarshalers.h"
 #include "ibusinternal.h"
 
 #define IBUS_OBJECT_GET_PRIVATE(o)  \

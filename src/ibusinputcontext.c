@@ -18,10 +18,11 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include "ibusinputcontext.h"
 #include <gio/gio.h>
 #include "ibusshare.h"
 #include "ibusinternal.h"
-#include "ibusinputcontext.h"
+#include "ibusmarshalers.h"
 #include "ibusattribute.h"
 #include "ibuslookuptable.h"
 #include "ibusproplist.h"

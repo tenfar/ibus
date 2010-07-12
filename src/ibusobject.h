@@ -35,7 +35,6 @@
 #define __IBUS_OBJECT_H_
 
 #include <glib-object.h>
-#include "ibusmarshalers.h"
 #include "ibustypes.h"
 #include "ibusdebug.h"
 

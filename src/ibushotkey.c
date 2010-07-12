@@ -19,6 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include "ibushotkey.h"
+#include "ibusmarshalers.h"
 #include "ibuskeysyms.h"
 #include "ibusinternal.h"
 #include "ibusshare.h"

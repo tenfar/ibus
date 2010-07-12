@@ -19,12 +19,13 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include "ibusbus.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
-#include "ibusbus.h"
+#include "ibusmarshalers.h"
 #include "ibusinternal.h"
 #include "ibusshare.h"
 #include "ibusenginedesc.h"

@@ -19,10 +19,10 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "ibusobject.h"
 #include "ibusproxy.h"
-
+#include "ibusmarshalers.h"
 #include "ibusinternal.h"
+#include "ibusobject.h"
 
 #define IBUS_PROXY_GET_PRIVATE(o)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((o), IBUS_TYPE_PROXY, IBusProxyPrivate))

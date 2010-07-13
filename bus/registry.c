@@ -25,6 +25,7 @@
 #include <string.h>
 #include "types.h"
 #include "option.h"
+#include "marshalers.h"
 
 enum {
     CHANGED,
@@ -57,7 +58,7 @@ bus_registry_class_init (BusRegistryClass *klass)
             G_SIGNAL_RUN_LAST,
             0,
             NULL, NULL,
-            ibus_marshal_VOID__VOID,
+            bus_marshal_VOID__VOID,
             G_TYPE_NONE,
             0);
 

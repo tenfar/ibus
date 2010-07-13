@@ -61,7 +61,7 @@ AC_SUBST(DATE_DISPLAY)
 # If only source code changed, lt_revision + 1
 # If any interface added, lt_age + 1
 # If any interfaces changed or removed, lt_current + 1, lt_revision = 0, lt_age = 0
-m4_define([lt_current], [2])
+m4_define([lt_current], [0])
 m4_define([lt_revision], [0])
 m4_define([lt_age], [0])
 LT_VERSION_INFO="lt_current:lt_revision:lt_age"
